@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Admin Settings - FreelanceHub' %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .settings-grid { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+    .settings-nav { background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; position:sticky; top:calc(var(--navbar-h)+20px); }
+    .settings-nav-item { display:flex; align-items:center; gap:10px; padding:12px 16px; color:var(--text-secondary); font-size:0.9rem; font-weight:500; cursor:pointer; border-left:3px solid transparent; transition:var(--transition); }
+    .settings-nav-item:hover, .settings-nav-item.active { background:var(--primary-light); color:var(--primary); border-left-color:var(--primary); }
+    .settings-nav-item i { width:18px; flex-shrink:0; }
+    .settings-section { display:none; }
+    .settings-section.active { display:block; }
+    .settings-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:24px; margin-bottom:20px; }
+    .settings-card h3 { font-size:1rem; font-weight:700; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+    .toggle-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border-light); }
+    .toggle-row:last-child { border-bottom:none; }
+    .toggle-label { font-size:0.9rem; font-weight:500; }
+    .toggle-desc { font-size:0.8rem; color:var(--text-muted); margin-top:2px; }
+    .toggle-switch { position:relative; width:44px; height:24px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; inset:0; background:#e2e8f0; border-radius:24px; cursor:pointer; transition:0.3s; }
+    .toggle-slider::before { content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.3s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+    .toggle-switch input:checked + .toggle-slider { background:var(--primary); }
+    .toggle-switch input:checked + .toggle-slider::before { transform:translateX(20px); }
+    .stat-highlight { background:linear-gradient(135deg,var(--primary) 0%,#764ba2 100%); color:#fff; border-radius:var(--radius-md); padding:20px; display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+    .stat-highlight i { font-size:2rem; opacity:0.85; }
+    .stat-highlight-val { font-size:1.8rem; font-weight:800; }
+    .stat-highlight-label { font-size:0.85rem; opacity:0.85; }
+  </style>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">Platform Settings</h1><p class="page-subtitle">Configure FreelanceHub</p></div>
+        <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+
+      <div class="settings-grid">
+        <!-- Settings Nav -->
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="showSection('general', this)"><i class="fas fa-cog"></i> General</div>
+          <div class="settings-nav-item" onclick="showSection('email', this)"><i class="fas fa-envelope"></i> Email</div>
+          <div class="settings-nav-item" onclick="showSection('security', this)"><i class="fas fa-shield-alt"></i> Security</div>
+          <div class="settings-nav-item" onclick="showSection('notifications', this)"><i class="fas fa-bell"></i> Notifications</div>
+          <div class="settings-nav-item" onclick="showSection('platform', this)"><i class="fas fa-sliders-h"></i> Platform</div>
+          <div class="settings-nav-item" onclick="showSection('stats', this)"><i class="fas fa-chart-bar"></i> Stats</div>
+        </div>
+
+        <!-- Settings Content -->
+        <div>
+          <!-- General -->
+          <div class="settings-section active" id="section-general">
+            <div class="settings-card">
+              <h3><i class="fas fa-info-circle"></i> Platform Info</h3>
+              <div class="form-group"><label>Platform Name</label><input type="text" class="form-input" value="FreelanceHub" id="platformName"></div>
+              <div class="form-group"><label>Tagline</label><input type="text" class="form-input" value="Connect. Create. Collaborate." id="tagline"></div>
+              <div class="form-group"><label>Support Email</label><input type="email" class="form-input" placeholder="support@freelancehub.com" id="supportEmail"></div>
+              <div class="form-group"><label>Platform URL</label><input type="url" class="form-input" value="<%= process?.env?.APP_URL || 'http://localhost:3000' %>" id="platformUrl"></div>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-rupee-sign"></i> Commission Settings</h3>
+              <div class="form-group">
+                <label>Platform Commission (%)</label>
+                <input type="number" class="form-input" value="10" min="0" max="50" step="0.5" id="commissionRate">
+                <small class="form-hint">Percentage taken from each completed project payment</small>
+              </div>
+              <div class="form-group">
+                <label>Minimum Project Budget (₹)</label>
+                <input type="number" class="form-input" value="500" min="0" id="minBudget">
+              </div>
+              <div class="form-group">
+                <label>Maximum Project Budget (₹)</label>
+                <input type="number" class="form-input" value="5000000" id="maxBudget">
+              </div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="settings-section" id="section-email">
+            <div class="settings-card">
+              <h3><i class="fas fa-envelope"></i> Email Configuration</h3>
+              <div class="form-row">
+                <div class="form-group"><label>SMTP Host</label><input type="text" class="form-input" value="smtp.gmail.com" id="smtpHost"></div>
+                <div class="form-group"><label>SMTP Port</label><input type="number" class="form-input" value="587" id="smtpPort"></div>
+              </div>
+              <div class="form-group"><label>From Email</label><input type="email" class="form-input" placeholder="noreply@freelancehub.com" id="fromEmail"></div>
+              <div class="form-group"><label>From Name</label><input type="text" class="form-input" value="FreelanceHub" id="fromName"></div>
+              <div class="form-group"><label>OTP Expiry (minutes)</label><input type="number" class="form-input" value="10" min="5" max="60" id="otpExpiry"></div>
+              <button class="btn btn-outline" onclick="testEmail()"><i class="fas fa-paper-plane"></i> Send Test Email</button>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-mail-bulk"></i> Email Notifications</h3>
+              <div class="toggle-row">
+                <div><div class="toggle-label">New Registration</div><div class="toggle-desc">Send welcome email to new users</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">New Proposal</div><div class="toggle-desc">Notify clients when they receive a proposal</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Project Completed</div><div class="toggle-desc">Send confirmation on project completion</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Daily Reports</div><div class="toggle-desc">Email clients when a daily report is submitted</div></div>
+                <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security -->
+          <div class="settings-section" id="section-security">
+            <div class="settings-card">
+              <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Require Email Verification</div><div class="toggle-desc">Users must verify email before accessing platform</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Allow Google OAuth</div><div class="toggle-desc">Enable Sign in with Google</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Auto-ban on Reports</div><div class="toggle-desc">Auto-ban users after 5 abuse reports</div></div>
+                <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-clock"></i> Session & Token</h3>
+              <div class="form-group"><label>Session Duration (days)</label><input type="number" class="form-input" value="7" min="1" max="30" id="sessionDays"></div>
+              <div class="form-group"><label>JWT Expiry (days)</label><input type="number" class="form-input" value="7" min="1" max="90" id="jwtExpiry"></div>
+              <div class="form-group"><label>Max Login Attempts</label><input type="number" class="form-input" value="5" min="3" max="20" id="maxLoginAttempts"></div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="settings-section" id="section-notifications">
+            <div class="settings-card">
+              <h3><i class="fas fa-bell"></i> In-App Notifications</h3>
+              <div class="toggle-row">
+                <div><div class="toggle-label">New Message</div><div class="toggle-desc">Notify when user receives a chat message</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">New Proposal</div><div class="toggle-desc">Notify clients on new proposals</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Hired Notification</div><div class="toggle-desc">Notify freelancer when hired</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Daily Report Submitted</div><div class="toggle-desc">Notify client on daily report</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Payment Notifications</div><div class="toggle-desc">Notify on project payment completion</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Platform -->
+          <div class="settings-section" id="section-platform">
+            <div class="settings-card">
+              <h3><i class="fas fa-sliders-h"></i> Platform Features</h3>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Allow New Registrations</div><div class="toggle-desc">Toggle to pause new sign-ups</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Maintenance Mode</div><div class="toggle-desc">Show maintenance page to all users</div></div>
+                <label class="toggle-switch"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Realtime Graphs</div><div class="toggle-desc">Enable socket-based live graph updates</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div class="toggle-row">
+                <div><div class="toggle-label">Profile Privacy</div><div class="toggle-desc">Allow freelancers to hide profiles from search</div></div>
+                <label class="toggle-switch"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-project-diagram"></i> Project Limits</h3>
+              <div class="form-group"><label>Max Active Projects per Client</label><input type="number" class="form-input" value="20" min="1" id="maxProjects"></div>
+              <div class="form-group"><label>Max Proposals per Freelancer per Project</label><input type="number" class="form-input" value="1" min="1" max="1" disabled></div>
+              <div class="form-group"><label>Max Skills per User</label><input type="number" class="form-input" value="20" min="5" max="50" id="maxSkills"></div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="settings-section" id="section-stats">
+            <div class="settings-card">
+              <h3><i class="fas fa-database"></i> Platform Statistics</h3>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+                <div class="stat-highlight"><i class="fas fa-users"></i><div><div class="stat-highlight-val" id="sTotal">—</div><div class="stat-highlight-label">Total Users</div></div></div>
+                <div class="stat-highlight" style="background:linear-gradient(135deg,#22c55e,#16a34a)"><i class="fas fa-briefcase"></i><div><div class="stat-highlight-val" id="sProjects">—</div><div class="stat-highlight-label">Projects</div></div></div>
+                <div class="stat-highlight" style="background:linear-gradient(135deg,#3b82f6,#2563eb)"><i class="fas fa-rupee-sign"></i><div><div class="stat-highlight-val" id="sRevenue">—</div><div class="stat-highlight-label">Revenue</div></div></div>
+              </div>
+              <button class="btn btn-outline" onclick="refreshStats()"><i class="fas fa-sync"></i> Refresh Stats</button>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-tools"></i> Maintenance Actions</h3>
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light)">
+                  <div><div class="fw-bold">Clear Old Notifications</div><div class="text-muted small">Remove notifications older than 30 days</div></div>
+                  <button class="btn btn-sm btn-outline" onclick="confirmAction('Clear old notifications?')"><i class="fas fa-trash"></i> Clear</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+                  <div><div class="fw-bold">Export User Data (CSV)</div><div class="text-muted small">Download all user records</div></div>
+                  <button class="btn btn-sm btn-outline"><i class="fas fa-download"></i> Export</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    const USER_ID = '<%= currentUser._id %>';
+
+    function showSection(name, el) {
+      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('section-' + name).classList.add('active');
+      el.classList.add('active');
+    }
+
+    function saveSettings() {
+      const btn = event.target;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-primary');
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-primary');
+          btn.disabled = false;
+        }, 2000);
+      }, 800);
+    }
+
+    function testEmail() {
+      alert('Test email feature requires backend integration with your SMTP config in .env');
+    }
+
+    function confirmAction(msg) {
+      if (confirm(msg)) alert('Action completed (demo mode)');
+    }
+
+    async function refreshStats() {
+      try {
+        const r = await fetch('/admin/graph-data');
+        const data = await r.json();
+        if (data.success) {
+          document.getElementById('sTotal').textContent = '—';
+          document.getElementById('sProjects').textContent = '—';
+          document.getElementById('sRevenue').textContent = '—';
+        }
+      } catch(e) {}
+    }
+  </script>
+</body>
+</html>

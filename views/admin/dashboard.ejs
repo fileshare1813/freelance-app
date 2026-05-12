@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Admin Dashboard</h1>
+          <p class="page-subtitle">Platform overview & analytics</p>
+        </div>
+        <div class="header-actions">
+          <span class="live-badge"><span class="live-dot"></span> Live</span>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card stat-blue">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= stats.totalUsers %></div>
+            <div class="stat-label">Total Users</div>
+          </div>
+          <div class="stat-sub"><%= stats.totalClients %> clients · <%= stats.totalFreelancers %> freelancers</div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= stats.totalProjects %></div>
+            <div class="stat-label">Total Projects</div>
+          </div>
+          <div class="stat-sub"><%= stats.openProjects %> open · <%= stats.completedProjects %> done</div>
+        </div>
+        <div class="stat-card stat-purple">
+          <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">₹<%= (stats.totalRevenue || 0).toLocaleString('en-IN') %></div>
+            <div class="stat-label">Total Revenue</div>
+          </div>
+          <div class="stat-sub">From completed projects</div>
+        </div>
+        <div class="stat-card stat-orange">
+          <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= stats.openProjects %></div>
+            <div class="stat-label">Active Projects</div>
+          </div>
+          <div class="stat-sub">Currently in progress</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Project Activity</h3>
+            <span class="chart-badge">Last 6 months</span>
+          </div>
+          <canvas id="projectChart" height="120"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Revenue Trend</h3>
+            <span class="chart-badge">Last 6 months</span>
+          </div>
+          <canvas id="revenueChart" height="120"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>User Growth</h3>
+            <span class="chart-badge">New registrations</span>
+          </div>
+          <canvas id="userChart" height="120"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Data -->
+      <div class="tables-grid">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Recent Users</h3>
+            <a href="/admin/users" class="view-all">View all →</a>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Role</th><th>Joined</th><th>Status</th></tr></thead>
+            <tbody>
+              <% recentUsers.forEach(u => { %>
+                <tr>
+                  <td><div class="user-cell">
+                    <img src="<%= u.googleAvatar || '/avatar/' + u._id %>" class="table-avatar" onerror="this.src='/images/default-avatar.png'">
+                    <%= u.name %>
+                  </div></td>
+                  <td><span class="badge role-<%= u.role %>"><%= u.role %></span></td>
+                  <td><%= new Date(u.createdAt).toLocaleDateString('en-IN') %></td>
+                  <td><span class="badge <%= u.isBanned ? 'badge-danger' : 'badge-success' %>"><%= u.isBanned ? 'Banned' : 'Active' %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Recent Projects</h3>
+            <a href="/admin/projects" class="view-all">View all →</a>
+          </div>
+          <table class="data-table">
+            <thead><tr><th>Title</th><th>Client</th><th>Budget</th><th>Status</th></tr></thead>
+            <tbody>
+              <% recentProjects.forEach(p => { %>
+                <tr>
+                  <td class="project-title-cell"><%= p.title.substring(0,30) %><%= p.title.length > 30 ? '...' : '' %></td>
+                  <td><%= p.client?.name || 'N/A' %></td>
+                  <td>₹<%= (p.budget || 0).toLocaleString('en-IN') %></td>
+                  <td><span class="badge status-<%= p.status %>"><%= p.status.replace('_',' ') %></span></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const GRAPH_DATA = <%- JSON.stringify(graphData) %>;
+    const USER_ID = '<%= currentUser._id %>';
+    const USER_ROLE = 'admin';
+    const GRAPH_API_URL = '/admin/graph-data';
+  </script>
+  <script src="/js/main.js"></script>
+  <script src="/js/charts.js"></script>
+  <script src="/js/notifications.js"></script>
+</body>
+</html>

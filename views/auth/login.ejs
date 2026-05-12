@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <%- include('../partials/flash') %>
+  <div class="auth-container">
+    <div class="auth-left">
+      <div class="auth-brand">
+        <span class="brand-icon-lg">⚡</span>
+        <h1>FreelanceHub</h1>
+        <p>Connect. Create. Collaborate.</p>
+      </div>
+      <div class="auth-features">
+        <div class="feature-item"><i class="fas fa-check-circle"></i> Find top freelancers</div>
+        <div class="feature-item"><i class="fas fa-check-circle"></i> Post projects easily</div>
+        <div class="feature-item"><i class="fas fa-check-circle"></i> Real-time collaboration</div>
+        <div class="feature-item"><i class="fas fa-check-circle"></i> Secure payments</div>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <p class="auth-subtitle">Login to your account</p>
+        <form action="/auth/login" method="POST" class="auth-form">
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" placeholder="your@email.com" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <div class="input-with-icon">
+              <input type="password" name="password" id="loginPassword" placeholder="••••••••" required class="form-input">
+              <button type="button" class="toggle-password" onclick="togglePass('loginPassword')">
+                <i class="fas fa-eye" id="loginPasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </button>
+        </form>
+        <div class="auth-divider"><span>or continue with</span></div>
+        <a href="/auth/google" class="btn btn-google btn-full">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
+          Continue with Google
+        </a>
+        <p class="auth-switch">Don't have an account? <a href="/auth/register">Register here</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="/js/main.js"></script>
+</body>
+</html>

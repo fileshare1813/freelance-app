@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Daily Reports</h1>
+          <p class="page-subtitle">Project: <strong><%= project.title %></strong></p>
+        </div>
+      </div>
+      <% if (reports.length === 0) { %>
+        <div class="empty-state-box"><i class="fas fa-clipboard fa-3x"></i><h3>No reports yet</h3><p>The freelancer hasn't submitted any reports for this project.</p></div>
+      <% } %>
+      <div class="reports-list">
+        <% reports.forEach(r => { %>
+        <div class="report-card">
+          <div class="report-header">
+            <div class="report-date"><i class="fas fa-calendar"></i> <%= new Date(r.date).toLocaleDateString('en-IN', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) %></div>
+            <div class="report-meta">
+              <span><i class="fas fa-clock"></i> <%= r.hoursWorked %> hrs worked</span>
+              <span class="progress-pill"><%= r.progressPercentage || 0 %>% complete</span>
+            </div>
+          </div>
+          <div class="report-progress-bar">
+            <div class="report-progress-fill" style="width:<%= r.progressPercentage || 0 %>%"></div>
+          </div>
+          <div class="report-body">
+            <% if (r.tasksCompleted && r.tasksCompleted.length > 0) { %>
+            <div class="report-section">
+              <h4><i class="fas fa-check-circle text-success"></i> Tasks Completed</h4>
+              <ul class="report-task-list">
+                <% r.tasksCompleted.forEach(t => { %><li><%= t %></li><% }) %>
+              </ul>
+            </div>
+            <% } %>
+            <% if (r.tasksPlanned && r.tasksPlanned.length > 0) { %>
+            <div class="report-section">
+              <h4><i class="fas fa-calendar-check text-info"></i> Planned for Tomorrow</h4>
+              <ul class="report-task-list">
+                <% r.tasksPlanned.forEach(t => { %><li><%= t %></li><% }) %>
+              </ul>
+            </div>
+            <% } %>
+            <% if (r.blockers) { %>
+            <div class="report-section">
+              <h4><i class="fas fa-exclamation-triangle text-warning"></i> Blockers</h4>
+              <p><%= r.blockers %></p>
+            </div>
+            <% } %>
+            <% if (r.notes) { %>
+            <div class="report-section">
+              <h4><i class="fas fa-sticky-note"></i> Notes</h4>
+              <p><%= r.notes %></p>
+            </div>
+            <% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

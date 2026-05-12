@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">Find Freelancers</h1><p class="page-subtitle">Discover top talent for your projects</p></div>
+      </div>
+      <div class="filter-bar">
+        <form action="/client/find-freelancer" method="GET" class="filter-form">
+          <input type="text" name="search" placeholder="Search name, skill, bio..." class="filter-input" value="<%= filters.search || '' %>">
+          <select name="skill" class="filter-select">
+            <option value="">All Skills</option>
+            <% allSkills.forEach(sk => { %>
+              <option value="<%= sk %>" <%= filters.skill === sk ? 'selected' : '' %>><%= sk %></option>
+            <% }) %>
+          </select>
+          <select name="availability" class="filter-select">
+            <option value="">Any Availability</option>
+            <option value="available" <%= filters.availability === 'available' ? 'selected' : '' %>>Available</option>
+            <option value="busy" <%= filters.availability === 'busy' ? 'selected' : '' %>>Busy</option>
+          </select>
+          <input type="number" name="minRate" placeholder="Min ₹/hr" class="filter-input filter-input-sm" value="<%= filters.minRate || '' %>">
+          <input type="number" name="maxRate" placeholder="Max ₹/hr" class="filter-input filter-input-sm" value="<%= filters.maxRate || '' %>">
+          <select name="sort" class="filter-select">
+            <option value="-rating" <%= filters.sort === '-rating' ? 'selected' : '' %>>Top Rated</option>
+            <option value="-completedProjects" <%= filters.sort === '-completedProjects' ? 'selected' : '' %>>Most Projects</option>
+            <option value="hourlyRate" <%= filters.sort === 'hourlyRate' ? 'selected' : '' %>>Lowest Rate</option>
+            <option value="-hourlyRate" <%= filters.sort === '-hourlyRate' ? 'selected' : '' %>>Highest Rate</option>
+          </select>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+          <a href="/client/find-freelancer" class="btn btn-outline">Clear</a>
+        </form>
+      </div>
+      <p class="results-count"><%= freelancers.length %> freelancer(s) found</p>
+      <div class="freelancers-grid">
+        <% if (freelancers.length === 0) { %>
+          <div class="empty-state-box full-width">
+            <i class="fas fa-user-slash fa-3x"></i>
+            <h3>No freelancers found</h3>
+            <p>Try adjusting your filters</p>
+          </div>
+        <% } %>
+        <% freelancers.forEach(fl => { %>
+        <div class="freelancer-card">
+          <div class="freelancer-card-top">
+            <a href="/client/freelancer/<%= fl._id %>">
+              <img src="<%= fl.googleAvatar || '/avatar/' + fl._id %>" class="freelancer-avatar"
+                onerror="this.src='/images/default-avatar.png'">
+            </a>
+            <div class="avail-dot avail-<%= fl.availability || 'available' %>" title="<%= fl.availability || 'available' %>"></div>
+          </div>
+          <div class="freelancer-card-body">
+            <h3><a href="/client/freelancer/<%= fl._id %>"><%= fl.name %></a></h3>
+            <div class="rating-row">
+              <% for(let i=1;i<=5;i++) { %>
+                <i class="fas fa-star <%= i <= Math.round(fl.rating||0) ? 'star-filled' : 'star-empty' %>"></i>
+              <% } %>
+              <span class="rating-count">(<%= fl.reviewCount || 0 %>)</span>
+            </div>
+            <p class="freelancer-bio"><%= (fl.bio || 'No bio provided').substring(0,80) %>...</p>
+            <div class="tags-row">
+              <% (fl.skills || []).slice(0,5).forEach(sk => { %><span class="tag"><%= sk %></span><% }) %>
+              <% if ((fl.skills||[]).length > 5) { %><span class="tag tag-more">+<%= fl.skills.length - 5 %></span><% } %>
+            </div>
+            <div class="freelancer-meta">
+              <span><i class="fas fa-rupee-sign"></i> <%= fl.hourlyRate ? '₹'+fl.hourlyRate+'/hr' : 'Negotiable' %></span>
+              <span><i class="fas fa-briefcase"></i> <%= fl.completedProjects || 0 %> projects</span>
+              <% if (fl.location) { %><span><i class="fas fa-map-marker-alt"></i> <%= fl.location %></span><% } %>
+            </div>
+          </div>
+          <div class="freelancer-card-actions">
+            <a href="/client/freelancer/<%= fl._id %>" class="btn btn-sm btn-outline">View Profile</a>
+            <form action="/messages/start" method="POST" style="display:inline">
+              <input type="hidden" name="userId" value="<%= fl._id %>">
+              <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-comment"></i> Message</button>
+            </form>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

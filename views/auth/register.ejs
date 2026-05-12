@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <%- include('../partials/flash') %>
+  <div class="auth-container">
+    <div class="auth-left">
+      <div class="auth-brand">
+        <span class="brand-icon-lg">⚡</span>
+        <h1>FreelanceHub</h1>
+        <p>Your career starts here</p>
+      </div>
+      <div class="role-info">
+        <div class="role-card" id="clientInfo">
+          <i class="fas fa-building"></i>
+          <h3>Client</h3>
+          <p>Post projects, hire top freelancers, manage your team</p>
+        </div>
+        <div class="role-card" id="freelancerInfo">
+          <i class="fas fa-laptop-code"></i>
+          <h3>Freelancer</h3>
+          <p>Showcase skills, find projects, earn on your terms</p>
+        </div>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join thousands of professionals</p>
+        <form action="/auth/register" method="POST" class="auth-form">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Full Name</label>
+            <input type="text" name="name" placeholder="John Doe" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" placeholder="your@email.com" required class="form-input">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <div class="input-with-icon">
+              <input type="password" name="password" id="regPassword" placeholder="Min 6 characters" required minlength="6" class="form-input">
+              <button type="button" class="toggle-password" onclick="togglePass('regPassword')">
+                <i class="fas fa-eye" id="regPasswordIcon"></i>
+              </button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-users"></i> I am a...</label>
+            <div class="role-selector">
+              <label class="role-option">
+                <input type="radio" name="role" value="client" required>
+                <div class="role-option-card">
+                  <i class="fas fa-building"></i>
+                  <span>Client</span>
+                  <small>Hiring talent</small>
+                </div>
+              </label>
+              <label class="role-option">
+                <input type="radio" name="role" value="freelancer" required>
+                <div class="role-option-card">
+                  <i class="fas fa-laptop-code"></i>
+                  <span>Freelancer</span>
+                  <small>Offering services</small>
+                </div>
+              </label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg">
+            <i class="fas fa-user-plus"></i> Create Account
+          </button>
+        </form>
+        <div class="auth-divider"><span>or</span></div>
+        <a href="/auth/google" class="btn btn-google btn-full">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
+          Sign up with Google
+        </a>
+        <p class="auth-switch">Already have an account? <a href="/auth/login">Login</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="/js/main.js"></script>
+</body>
+</html>

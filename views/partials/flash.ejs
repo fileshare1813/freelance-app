@@ -1,0 +1,18 @@
+<div class="flash-container" id="flashContainer">
+  <% if (success && success.length > 0) { %>
+    <% success.forEach(msg => { %>
+      <div class="flash flash-success">
+        <i class="fas fa-check-circle"></i> <%= msg %>
+        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+    <% }) %>
+  <% } %>
+  <% if (error && error.length > 0) { %>
+    <% error.forEach(msg => { %>
+      <div class="flash flash-error">
+        <i class="fas fa-exclamation-circle"></i> <%= msg %>
+        <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+      </div>
+    <% }) %>
+  <% } %>
+</div>

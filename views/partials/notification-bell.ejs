@@ -1,0 +1,20 @@
+<div class="notif-wrapper" id="notifWrapper">
+  <button class="nav-icon-btn notif-btn" id="notifBtn">
+    <i class="fas fa-bell"></i>
+    <% if (unreadNotifications > 0) { %>
+      <span class="notif-badge" id="notifCount"><%= unreadNotifications %></span>
+    <% } else { %>
+      <span class="notif-badge hidden" id="notifCount">0</span>
+    <% } %>
+  </button>
+  <div class="notif-dropdown" id="notifDropdown">
+    <div class="notif-header">
+      <span>Notifications</span>
+      <button onclick="markAllRead()" class="mark-read-btn">Mark all read</button>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-loading">Loading...</div>
+    </div>
+    <a href="/notifications" class="notif-footer">View all notifications</a>
+  </div>
+</div>

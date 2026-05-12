@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">Daily Report</h1><p class="page-subtitle">Share today's progress with your client</p></div>
+      </div>
+      <% if (activeProjects.length === 0) { %>
+        <div class="empty-state-box">
+          <i class="fas fa-clipboard fa-3x"></i>
+          <h3>No active projects</h3>
+          <p>You don't have any active projects to report on.</p>
+          <a href="/freelancer/browse-projects" class="btn btn-primary">Browse Projects</a>
+        </div>
+      <% } else { %>
+      <div class="form-card">
+        <form action="/freelancer/submit-report" method="POST" class="report-form">
+          <div class="form-section">
+            <h3><i class="fas fa-project-diagram"></i> Select Project</h3>
+            <div class="form-group">
+              <label>Active Project *</label>
+              <select name="projectId" class="form-select" required>
+                <option value="">Select a project...</option>
+                <% activeProjects.forEach(p => { %>
+                  <option value="<%= p._id %>" <%= selectedProject === String(p._id) ? 'selected' : '' %>>
+                    <%= p.title %> (Client: <%= p.client?.name || 'N/A' %>)
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+          <div class="form-section">
+            <h3><i class="fas fa-chart-bar"></i> Today's Progress</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hours Worked Today *</label>
+                <input type="number" name="hoursWorked" class="form-input" placeholder="e.g. 6" required min="0.5" max="24" step="0.5">
+              </div>
+              <div class="form-group">
+                <label>Overall Progress % *</label>
+                <div class="progress-input-wrap">
+                  <input type="range" name="progressPercentage" id="progressRange" min="0" max="100" value="50" class="progress-range" oninput="document.getElementById('progressVal').textContent=this.value+'%'">
+                  <span id="progressVal" class="progress-val">50%</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Tasks Completed Today *</label>
+              <textarea name="tasksCompleted" class="form-textarea" rows="4"
+                placeholder="List each completed task on a new line:&#10;- Fixed login bug&#10;- Implemented user dashboard&#10;- Added responsive CSS" required></textarea>
+              <small class="form-hint">One task per line</small>
+            </div>
+            <div class="form-group">
+              <label>Planned for Tomorrow</label>
+              <textarea name="tasksPlanned" class="form-textarea" rows="3"
+                placeholder="Tasks planned for tomorrow:&#10;- Integrate payment gateway&#10;- Write unit tests"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Blockers / Issues</label>
+              <textarea name="blockers" class="form-textarea" rows="2" placeholder="Any blockers or issues you're facing? Leave empty if none."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Additional Notes</label>
+              <textarea name="notes" class="form-textarea" rows="2" placeholder="Any other notes for the client..."></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-paper-plane"></i> Send Report to Client
+            </button>
+            <a href="/freelancer/my-proposals" class="btn btn-outline btn-lg">Cancel</a>
+          </div>
+        </form>
+      </div>
+      <% } %>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

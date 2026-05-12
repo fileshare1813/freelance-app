@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/chat.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content chat-main">
+      <div class="chat-layout">
+
+        <!-- ===== LEFT: Conversations List ===== -->
+        <div class="chat-sidebar">
+          <div class="chat-sidebar-header">
+            <h3>Messages</h3>
+            <span class="conv-count"><%= conversations.length %></span>
+          </div>
+          <div class="conv-list">
+            <% if (conversations.length === 0) { %>
+              <div class="conv-empty">
+                <i class="fas fa-comment-slash"></i>
+                <p>No conversations yet</p>
+              </div>
+            <% } %>
+            <% conversations.forEach(conv => {
+                const isActive = activeConversation && activeConversation._id.toString() === conv._id.toString();
+            %>
+            <a href="/messages/<%= conv._id %>"
+              class="conv-item <%= isActive ? 'conv-active' : '' %>">
+              <div class="conv-avatar-wrap">
+                <img
+                  src="<%= conv.otherUser && conv.otherUser.googleAvatar ? conv.otherUser.googleAvatar : (conv.otherUser ? '/avatar/' + conv.otherUser._id : '/images/default-avatar.png') %>"
+                  class="conv-avatar"
+                  onerror="this.src='/images/default-avatar.png'">
+              </div>
+              <div class="conv-info">
+                <div class="conv-name"><%= conv.otherUser ? conv.otherUser.name : 'Unknown' %></div>
+                <div class="conv-role"><%= conv.otherUser ? conv.otherUser.role : '' %></div>
+                <div class="conv-last-msg">
+                  <%= conv.lastMessage && conv.lastMessage.content
+                      ? conv.lastMessage.content.substring(0,35) + (conv.lastMessage.content.length > 35 ? '...' : '')
+                      : 'Start a conversation...' %>
+                </div>
+              </div>
+              <div class="conv-time">
+                <% if (conv.updatedAt) { %>
+                  <%= new Date(conv.updatedAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}) %>
+                <% } %>
+              </div>
+            </a>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- ===== RIGHT: Chat Window ===== -->
+        <div class="chat-window">
+          <% if (!activeConversation) { %>
+            <div class="chat-empty">
+              <i class="fas fa-comments fa-4x"></i>
+              <h3>Select a conversation</h3>
+              <p>Choose from the list to start chatting</p>
+            </div>
+          <% } else { %>
+            <!-- Chat Header -->
+            <div class="chat-header">
+              <img
+                src="<%= otherUser && otherUser.googleAvatar ? otherUser.googleAvatar : (otherUser ? '/avatar/'+otherUser._id : '/images/default-avatar.png') %>"
+                class="chat-header-avatar"
+                onerror="this.src='/images/default-avatar.png'">
+              <div>
+                <div class="chat-header-name"><%= otherUser ? otherUser.name : 'User' %></div>
+                <div class="chat-header-role"><%= otherUser ? otherUser.role : '' %></div>
+              </div>
+              <div class="typing-indicator" id="typingIndicator" style="display:none">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="messages-wrap" id="messagesWrap">
+              <% if (messages.length === 0) { %>
+                <div class="chat-start-hint">
+                  <i class="fas fa-hand-wave"></i>
+                  Say hello to <strong><%= otherUser ? otherUser.name : 'User' %></strong>!
+                </div>
+              <% } %>
+              <% messages.forEach(function(msg) {
+                const isOwn = msg.sender && msg.sender._id && msg.sender._id.toString() === currentUser._id.toString();
+                const senderAvatar = msg.sender && msg.sender.googleAvatar
+                  ? msg.sender.googleAvatar
+                  : (msg.sender && msg.sender._id ? '/avatar/' + msg.sender._id : '/images/default-avatar.png');
+                const msgTime = new Date(msg.createdAt).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+              %>
+              <div class="message-row <%= isOwn ? 'message-own' : 'message-other' %>"
+                data-msg-id="<%= msg._id %>">
+                <% if (!isOwn) { %>
+                  <img src="<%= senderAvatar %>" class="msg-avatar"
+                    onerror="this.src='/images/default-avatar.png'">
+                <% } %>
+                <div class="message-bubble">
+                  <div class="message-text"><%= msg.content %></div>
+                  <div class="message-time"><%= msgTime %></div>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-area">
+              <form id="messageForm" class="message-form" onsubmit="return false;">
+                <input
+                  type="text"
+                  id="messageInput"
+                  class="message-input"
+                  placeholder="Type a message..."
+                  autocomplete="off"
+                  value="<%= typeof initMsg !== 'undefined' && initMsg ? initMsg : '' %>"
+                  maxlength="2000">
+                <button type="button" id="sendBtn" class="send-btn" onclick="document.getElementById('messageForm').dispatchEvent(new Event('submit'))">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </form>
+            </div>
+          <% } %>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Pass server data to JS -->
+  <script>
+    const USER_ID       = '<%= currentUser._id %>';
+    const CONV_ID       = '<%= activeConversation ? activeConversation._id.toString() : "" %>';
+    const OTHER_USER_ID = '<%= otherUser ? otherUser._id.toString() : "" %>';
+    const OTHER_USER_NAME   = '<%= otherUser ? otherUser.name.replace(/'/g, "\\'") : "" %>';
+    const OTHER_USER_AVATAR = '<%= otherUser ? (otherUser.googleAvatar || "/avatar/"+otherUser._id) : "" %>';
+  </script>
+  <script src="/js/main.js"></script>
+  <script src="/js/chat.js"></script>
+  <script src="/js/notifications.js"></script>
+
+  <style>
+    .chat-start-hint {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+    .chat-start-hint i { font-size: 2rem; display: block; margin-bottom: 10px; }
+  </style>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">My Projects</h1></div>
+        <a href="/client/post-project" class="btn btn-primary"><i class="fas fa-plus"></i> New Project</a>
+      </div>
+      <div class="filter-bar">
+        <form action="/client/my-projects" method="GET" class="filter-form">
+          <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <% ['open','in_progress','completed','cancelled'].forEach(s => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+            <% }) %>
+          </select>
+          <select name="sort" class="filter-select" onchange="this.form.submit()">
+            <option value="-createdAt">Newest First</option>
+            <option value="-budget">Highest Budget</option>
+            <option value="-proposalCount">Most Proposals</option>
+          </select>
+        </form>
+      </div>
+      <div class="projects-grid">
+        <% if (projects.length === 0) { %>
+          <div class="empty-state-box full-width">
+            <i class="fas fa-folder-open fa-3x"></i>
+            <h3>No projects found</h3>
+            <p>Post your first project to get started</p>
+            <a href="/client/post-project" class="btn btn-primary">Post a Project</a>
+          </div>
+        <% } %>
+        <% projects.forEach(p => { %>
+        <div class="project-card">
+          <div class="project-card-header">
+            <div>
+              <h3 class="project-title"><%= p.title %></h3>
+              <span class="badge status-<%= p.status %>"><%= p.status.replace('_',' ') %></span>
+              <span class="badge priority-<%= p.priority || 'medium' %>"><%= p.priority || 'medium' %></span>
+            </div>
+            <div class="project-budget">₹<%= (p.budget || 0).toLocaleString('en-IN') %></div>
+          </div>
+          <p class="project-desc"><%= p.description.substring(0,120) %>...</p>
+          <div class="tags-row">
+            <% (p.skills || []).slice(0,4).forEach(sk => { %><span class="tag"><%= sk %></span><% }) %>
+          </div>
+          <div class="project-meta">
+            <span><i class="fas fa-paper-plane"></i> <%= p.proposalCount || 0 %> proposals</span>
+            <% if (p.hiredFreelancer) { %>
+              <span><i class="fas fa-user-check"></i> Hired: <%= p.hiredFreelancer.name %></span>
+            <% } %>
+            <% if (p.deadline) { %><span><i class="fas fa-calendar"></i> Due: <%= new Date(p.deadline).toLocaleDateString('en-IN') %></span><% } %>
+          </div>
+          <div class="project-card-actions">
+            <a href="/client/my-projects/<%= p._id %>/proposals" class="btn btn-sm btn-primary">
+              <i class="fas fa-users"></i> View Proposals
+            </a>
+            <% if (p.hiredFreelancer) { %>
+              <a href="/reports/project/<%= p._id %>" class="btn btn-sm btn-outline">
+                <i class="fas fa-file-alt"></i> Reports
+              </a>
+            <% } %>
+            <% if (p.status === 'in_progress') { %>
+              <a href="/payments/project/<%= p._id %>" class="btn btn-sm btn-warning">
+                <i class="fas fa-credit-card"></i> Pay Now
+              </a>
+              <form action="/payments/project/<%= p._id %>/complete" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-success"
+                  onclick="return confirm('Mark project complete and release payment to freelancer?')">
+                  <i class="fas fa-check"></i> Mark Complete
+                </button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

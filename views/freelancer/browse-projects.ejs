@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">Browse Projects</h1><p class="page-subtitle">Find your next opportunity</p></div>
+      </div>
+      <div class="filter-bar">
+        <form action="/freelancer/browse-projects" method="GET" class="filter-form">
+          <input type="text" name="search" placeholder="Search projects..." class="filter-input" value="<%= filters.search || '' %>">
+          <select name="skill" class="filter-select">
+            <option value="">All Skills</option>
+            <% allSkills.forEach(sk => { %>
+              <option value="<%= sk %>" <%= filters.skill === sk ? 'selected' : '' %>><%= sk %></option>
+            <% }) %>
+          </select>
+          <select name="category" class="filter-select">
+            <option value="">All Categories</option>
+            <% categories.forEach(c => { %>
+              <option value="<%= c %>" <%= filters.category === c ? 'selected' : '' %>><%= c %></option>
+            <% }) %>
+          </select>
+          <input type="number" name="minBudget" placeholder="Min ₹" class="filter-input filter-input-sm" value="<%= filters.minBudget || '' %>">
+          <input type="number" name="maxBudget" placeholder="Max ₹" class="filter-input filter-input-sm" value="<%= filters.maxBudget || '' %>">
+          <select name="sort" class="filter-select">
+            <option value="-createdAt">Newest</option>
+            <option value="-budget">Highest Budget</option>
+            <option value="budget">Lowest Budget</option>
+            <option value="-proposalCount">Most Popular</option>
+          </select>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+          <a href="/freelancer/browse-projects" class="btn btn-outline">Clear</a>
+        </form>
+      </div>
+      <p class="results-count"><%= projects.length %> project(s) available</p>
+      <div class="projects-list">
+        <% if (projects.length === 0) { %>
+          <div class="empty-state-box"><i class="fas fa-search fa-3x"></i><h3>No projects found</h3><p>Try adjusting your filters</p></div>
+        <% } %>
+        <% projects.forEach(p => { %>
+        <div class="project-list-card">
+          <div class="plc-header">
+            <div class="plc-title-wrap">
+              <h3 class="plc-title"><%= p.title %></h3>
+              <div class="plc-meta">
+                <span><i class="fas fa-folder"></i> <%= p.category %></span>
+                <span><i class="fas fa-clock"></i> <%= p.deadline ? 'Due: ' + new Date(p.deadline).toLocaleDateString('en-IN') : 'Flexible' %></span>
+                <span><i class="fas fa-users"></i> <%= p.proposalCount || 0 %> proposals</span>
+                <span><i class="fas fa-user"></i> <%= p.client?.name || 'Client' %></span>
+              </div>
+            </div>
+            <div class="plc-budget">
+              <div class="budget-amount">₹<%= (p.budget||0).toLocaleString('en-IN') %></div>
+              <div class="budget-type"><%= p.budgetType === 'hourly' ? '/hr' : 'Fixed' %></div>
+            </div>
+          </div>
+          <p class="plc-desc"><%= p.description.substring(0,200) %>...</p>
+          <div class="tags-row">
+            <% (p.skills||[]).forEach(sk => { %><span class="tag <%= currentUser.skills && currentUser.skills.includes(sk) ? 'tag-match' : '' %>"><%= sk %></span><% }) %>
+          </div>
+          <div class="plc-actions">
+            <% if (p.alreadyApplied) { %>
+              <span class="badge badge-success"><i class="fas fa-check"></i> Already Applied</span>
+            <% } else { %>
+              <button class="btn btn-primary btn-sm" onclick="openApplyModal('<%= p._id %>', '<%= p.title.replace(/'/g, '') %>', <%= p.budget %>)">
+                <i class="fas fa-paper-plane"></i> Apply Now
+              </button>
+            <% } %>
+            <!-- Message client directly about this project -->
+            <form action="/freelancer/message-client" method="POST" style="display:inline">
+              <input type="hidden" name="clientId" value="<%= p.client?._id %>">
+              <input type="hidden" name="projectId" value="<%= p._id %>">
+              <input type="hidden" name="message" value="Hi, I'm interested in your project: <%= p.title %>">
+              <button type="submit" class="btn btn-outline btn-sm"><i class="fas fa-comment"></i> Message Client</button>
+            </form>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </main>
+  </div>
+
+  <!-- Apply Modal -->
+  <div class="modal-overlay" id="applyModal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Submit Proposal</h3>
+        <button onclick="closeApplyModal()" class="modal-close">×</button>
+      </div>
+      <form id="applyForm" method="POST" class="modal-body">
+        <p class="modal-project-title" id="modalProjectTitle"></p>
+        <div class="form-group">
+          <label>Your Bid (₹) *</label>
+          <input type="number" name="bidAmount" id="modalBid" class="form-input" placeholder="Enter your bid amount" required min="1">
+        </div>
+        <div class="form-group">
+          <label>Delivery Time (days) *</label>
+          <input type="number" name="deliveryTime" class="form-input" placeholder="e.g. 14" required min="1">
+        </div>
+        <div class="form-group">
+          <label>Cover Letter *</label>
+          <textarea name="coverLetter" class="form-textarea" rows="5"
+            placeholder="Explain why you're the best fit for this project. Mention relevant experience, your approach, and what makes you stand out..."
+            required minlength="50"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">Submit Proposal</button>
+          <button type="button" onclick="closeApplyModal()" class="btn btn-outline">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    const USER_ID = '<%= currentUser._id %>';
+    function openApplyModal(projectId, title, budget) {
+      document.getElementById('applyForm').action = '/freelancer/projects/' + projectId + '/apply';
+      document.getElementById('modalProjectTitle').textContent = title;
+      document.getElementById('modalBid').value = budget;
+      document.getElementById('applyModal').style.display = 'flex';
+    }
+    function closeApplyModal() {
+      document.getElementById('applyModal').style.display = 'none';
+    }
+    document.getElementById('applyModal').addEventListener('click', function(e) {
+      if (e.target === this) closeApplyModal();
+    });
+  </script>
+</body>
+</html>

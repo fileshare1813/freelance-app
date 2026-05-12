@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="auth-body">
+  <%- include('../partials/flash') %>
+  <div class="otp-container">
+    <div class="otp-card">
+      <div class="otp-icon"><i class="fas fa-envelope-open-text"></i></div>
+      <h2>Verify Your Email</h2>
+      <p>We sent a 5-digit code to <strong><%= email %></strong></p>
+      <form action="/auth/verify-otp" method="POST" class="otp-form" id="otpForm">
+        <div class="otp-inputs">
+          <input type="text" maxlength="1" class="otp-box" id="otp1" autofocus>
+          <input type="text" maxlength="1" class="otp-box" id="otp2">
+          <input type="text" maxlength="1" class="otp-box" id="otp3">
+          <input type="text" maxlength="1" class="otp-box" id="otp4">
+          <input type="text" maxlength="1" class="otp-box" id="otp5">
+        </div>
+        <input type="hidden" name="otp" id="otpHidden">
+        <button type="submit" class="btn btn-primary btn-full btn-lg" id="verifyBtn">
+          <i class="fas fa-check"></i> Verify Email
+        </button>
+      </form>
+      <div class="otp-resend">
+        <span id="timerText">Resend code in <span id="timer">60</span>s</span>
+        <form action="/auth/resend-otp" method="POST" id="resendForm" style="display:none">
+          <button type="submit" class="btn-link">Resend OTP</button>
+        </form>
+      </div>
+      <a href="/auth/register" class="btn-link" style="margin-top:10px; display:block; text-align:center">
+        ← Back to Register
+      </a>
+    </div>
+  </div>
+  <script src="/js/otp.js"></script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<nav class="navbar">
+  <div class="nav-brand">
+    <a href="/" class="brand-link">
+      <span class="brand-icon">⚡</span>
+      <span class="brand-name">FreelanceHub</span>
+    </a>
+  </div>
+  <div class="nav-center">
+    <% if (currentUser) { %>
+      <% if (currentUser.role === 'client') { %>
+        <a href="/client/dashboard" class="nav-link">Dashboard</a>
+        <a href="/client/post-project" class="nav-link">Post Project</a>
+        <a href="/client/find-freelancer" class="nav-link">Find Talent</a>
+        <a href="/client/my-projects" class="nav-link">My Projects</a>
+      <% } else if (currentUser.role === 'freelancer') { %>
+        <a href="/freelancer/dashboard" class="nav-link">Dashboard</a>
+        <a href="/freelancer/browse-projects" class="nav-link">Browse Projects</a>
+        <a href="/freelancer/my-proposals" class="nav-link">My Proposals</a>
+        <a href="/freelancer/submit-report" class="nav-link">Daily Report</a>
+      <% } else if (currentUser.role === 'admin') { %>
+        <a href="/admin/dashboard" class="nav-link">Dashboard</a>
+        <a href="/admin/users" class="nav-link">Users</a>
+        <a href="/admin/projects" class="nav-link">Projects</a>
+      <% } %>
+    <% } %>
+  </div>
+  <div class="nav-right">
+    <% if (currentUser) { %>
+      <%- include('./notification-bell') %>
+      <a href="/messages" class="nav-icon-btn" title="Messages">
+        <i class="fas fa-comment-dots"></i>
+      </a>
+      <div class="user-menu">
+        <button class="user-menu-trigger" id="userMenuBtn">
+          <img src="<%= currentUser.googleAvatar || '/avatar/' + currentUser._id %>" 
+               alt="<%= currentUser.name %>" class="nav-avatar"
+               onerror="this.src='/images/default-avatar.png'">
+          <span class="user-name-nav"><%= currentUser.name.split(' ')[0] %></span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-header">
+            <strong><%= currentUser.name %></strong>
+            <span class="role-badge role-<%= currentUser.role %>"><%= currentUser.role %></span>
+          </div>
+          <a href="/profile" class="dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+          <% if (currentUser.role === 'freelancer') { %>
+            <a href="/freelancer/edit-profile" class="dropdown-item"><i class="fas fa-edit"></i> Edit Profile</a>
+          <% } %>
+          <a href="/messages" class="dropdown-item"><i class="fas fa-envelope"></i> Messages</a>
+          <a href="/notifications" class="dropdown-item"><i class="fas fa-bell"></i> Notifications</a>
+          <div class="dropdown-divider"></div>
+          <a href="/auth/logout" class="dropdown-item logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+      </div>
+    <% } else { %>
+      <a href="/auth/login" class="btn btn-outline">Login</a>
+      <a href="/auth/register" class="btn btn-primary">Get Started</a>
+    <% } %>
+  </div>
+</nav>

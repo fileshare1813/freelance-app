@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">All Projects</h1><p class="page-subtitle">Manage all projects on the platform</p></div>
+      </div>
+      <div class="filter-bar">
+        <form action="/admin/projects" method="GET" class="filter-form">
+          <input type="text" name="search" placeholder="Search projects..." class="filter-input" value="<%= filters.search || '' %>">
+          <select name="status" class="filter-select">
+            <option value="">All Status</option>
+            <% ['open','in_progress','completed','cancelled','on_hold'].forEach(s => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+            <% }) %>
+          </select>
+          <select name="category" class="filter-select">
+            <option value="">All Categories</option>
+            <% categories.forEach(c => { %>
+              <option value="<%= c %>" <%= filters.category === c ? 'selected' : '' %>><%= c %></option>
+            <% }) %>
+          </select>
+          <select name="sort" class="filter-select">
+            <option value="-createdAt">Newest</option>
+            <option value="-budget">Highest Budget</option>
+            <option value="budget">Lowest Budget</option>
+          </select>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Filter</button>
+          <a href="/admin/projects" class="btn btn-outline">Clear</a>
+        </form>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><h3>Projects (<%= projects.length %>)</h3></div>
+        <table class="data-table">
+          <thead><tr><th>Title</th><th>Client</th><th>Category</th><th>Budget</th><th>Status</th><th>Proposals</th><th>Posted</th></tr></thead>
+          <tbody>
+            <% projects.forEach(p => { %>
+            <tr>
+              <td>
+                <div class="fw-bold"><%= p.title.substring(0,40) %><%= p.title.length > 40 ? '...' : '' %></div>
+                <div class="tags-row">
+                  <% (p.skills || []).slice(0,3).forEach(sk => { %>
+                    <span class="tag"><%= sk %></span>
+                  <% }) %>
+                </div>
+              </td>
+              <td><%= p.client?.name || 'N/A' %></td>
+              <td><%= p.category %></td>
+              <td class="fw-bold">₹<%= (p.budget || 0).toLocaleString('en-IN') %></td>
+              <td><span class="badge status-<%= p.status %>"><%= p.status.replace('_',' ') %></span></td>
+              <td><%= p.proposalCount || 0 %></td>
+              <td><%= new Date(p.createdAt).toLocaleDateString('en-IN') %></td>
+            </tr>
+            <% }) %>
+            <% if (projects.length === 0) { %><tr><td colspan="7" class="empty-state">No projects found</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

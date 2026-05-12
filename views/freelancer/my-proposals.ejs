@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">My Proposals</h1><p class="page-subtitle">Track all your submitted proposals</p></div>
+        <a href="/freelancer/browse-projects" class="btn btn-primary"><i class="fas fa-search"></i> Find More Projects</a>
+      </div>
+      <div class="filter-bar">
+        <form action="/freelancer/my-proposals" method="GET" class="filter-form">
+          <select name="status" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <% ['pending','accepted','rejected','withdrawn'].forEach(s => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+          <select name="sort" class="filter-select" onchange="this.form.submit()">
+            <option value="-createdAt">Newest First</option>
+            <option value="-bidAmount">Highest Bid</option>
+          </select>
+        </form>
+      </div>
+      <div class="table-card">
+        <table class="data-table">
+          <thead><tr><th>Project</th><th>Budget</th><th>My Bid</th><th>Delivery</th><th>Status</th><th>Applied</th><th>Actions</th></tr></thead>
+          <tbody>
+            <% if (proposals.length === 0) { %>
+              <tr><td colspan="7" class="empty-state">No proposals yet. <a href="/freelancer/browse-projects">Browse projects!</a></td></tr>
+            <% } %>
+            <% proposals.forEach(p => { %>
+            <tr>
+              <td>
+                <div class="fw-bold"><%= p.project?.title?.substring(0,35) || 'Project Deleted' %></div>
+                <div class="text-muted small"><%= p.project?.category || '' %></div>
+              </td>
+              <td>₹<%= (p.project?.budget||0).toLocaleString('en-IN') %></td>
+              <td class="fw-bold">₹<%= (p.bidAmount||0).toLocaleString('en-IN') %></td>
+              <td><%= p.deliveryTime %> days</td>
+              <td>
+                <span class="badge status-<%= p.status %>">
+                  <% if(p.status==='accepted') { %><i class="fas fa-check"></i><% } %>
+                  <% if(p.status==='rejected') { %><i class="fas fa-times"></i><% } %>
+                  <%= p.status %>
+                </span>
+              </td>
+              <td><%= new Date(p.createdAt).toLocaleDateString('en-IN') %></td>
+              <td>
+                <% if (p.status === 'accepted' && p.project) { %>
+                  <a href="/freelancer/submit-report?project=<%= p.project._id %>" class="btn btn-sm btn-primary">
+                    <i class="fas fa-file-alt"></i> Report
+                  </a>
+                  <a href="/reports/project/<%= p.project._id %>" class="btn btn-sm btn-outline">
+                    <i class="fas fa-history"></i> History
+                  </a>
+                <% } %>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

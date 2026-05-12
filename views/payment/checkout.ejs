@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .pay-wrap{ max-width:660px; margin:0 auto; }
+
+    /* Mode badge */
+    .mode-badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 12px; border-radius:20px; font-size:0.78rem; font-weight:700; margin-bottom:14px;
+    }
+    .mode-test{ background:#fef3c7; color:#92400e; }
+    .mode-live{ background:#dcfce7; color:#166534; }
+
+    /* Hero */
+    .pay-hero{
+      background:linear-gradient(135deg,#6c63ff 0%,#764ba2 100%);
+      border-radius:var(--radius-lg); padding:26px 30px; color:#fff;
+      display:flex; align-items:center; gap:18px; margin-bottom:20px;
+    }
+    .pay-hero-icon{ font-size:2.6rem; opacity:.9; flex-shrink:0; }
+    .pay-hero h1{ font-size:1.3rem; font-weight:700; margin-bottom:4px; }
+    .pay-hero p{ opacity:.85; font-size:.88rem; }
+
+    /* Breakdown */
+    .breakdown{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; margin-bottom:18px; }
+    .brow{ display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid var(--border-light); font-size:.9rem; }
+    .brow:last-child{ border-bottom:none; }
+    .brow-lbl{ color:var(--text-secondary); display:flex; align-items:center; gap:8px; }
+    .brow-val{ font-weight:600; }
+    .brow.total{ background:var(--primary-light); border-top:2px solid var(--primary); }
+    .brow.total .brow-lbl{ color:var(--primary); font-weight:700; }
+    .brow.total .brow-val{ color:var(--primary); font-size:1.25rem; font-weight:800; }
+
+    /* Steps */
+    .flow-card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:18px 20px; margin-bottom:18px; }
+    .flow-card h4{ font-size:.82rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:14px; }
+    .step{ display:flex; gap:12px; margin-bottom:10px; font-size:.85rem; align-items:flex-start; }
+    .step:last-child{ margin-bottom:0; }
+    .step-n{ width:24px; height:24px; border-radius:50%; background:var(--primary-light); color:var(--primary); font-weight:700; font-size:.78rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .step-txt strong{ display:block; font-weight:600; }
+    .step-txt span{ color:var(--text-muted); font-size:.8rem; }
+
+    /* Security note */
+    .sec-note{ background:#f0fdf4; border:1px solid #bbf7d0; border-radius:var(--radius-md); padding:14px 18px; display:flex; gap:12px; margin-bottom:18px; }
+    .sec-note i{ color:var(--success); font-size:1.1rem; flex-shrink:0; margin-top:2px; }
+    .sec-note h4{ font-size:.88rem; font-weight:700; color:#166534; margin-bottom:3px; }
+    .sec-note p{ font-size:.8rem; color:#166534; }
+
+    /* Pay button */
+    .pay-btn{ width:100%; padding:15px; font-size:1rem; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; gap:10px; }
+    .rzp-note{ text-align:center; margin-top:10px; font-size:.75rem; color:var(--text-muted); }
+
+    /* Already paid */
+    .paid-box{ background:#f0fdf4; border:1px solid #86efac; border-radius:var(--radius-md); padding:28px; text-align:center; }
+    .paid-box i{ font-size:3rem; color:var(--success); display:block; margin-bottom:12px; }
+    .paid-box h3{ color:#166534; margin-bottom:6px; }
+    .paid-box p{ color:#16a34a; font-size:.9rem; }
+
+    /* Freelancer no-payout warning */
+    .warn-box{ background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-md); padding:14px 18px; display:flex; gap:12px; margin-bottom:18px; }
+    .warn-box i{ color:var(--warning); font-size:1.1rem; flex-shrink:0; margin-top:2px; }
+    .warn-box h4{ font-size:.88rem; font-weight:700; color:#92400e; margin-bottom:3px; }
+    .warn-box p{ font-size:.8rem; color:#92400e; }
+
+    /* Success overlay */
+    #succOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; align-items:center; justify-content:center; }
+    #succOverlay.show{ display:flex; }
+    .succ-box{ background:#fff; border-radius:var(--radius-lg); padding:38px; text-align:center; max-width:420px; width:90%; animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
+    .succ-ring{ width:76px; height:76px; background:var(--success); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:2rem; color:#fff; }
+    @keyframes popIn{ from{transform:scale(.8);opacity:0} to{transform:scale(1);opacity:1} }
+  </style>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="pay-wrap">
+
+        <div class="back-nav">
+          <a href="/client/my-projects" class="back-link"><i class="fas fa-arrow-left"></i> Back to Projects</a>
+        </div>
+
+        <!-- Mode badge -->
+        <span class="mode-badge mode-<%= razorpayMode %>">
+          <i class="fas fa-<%= razorpayMode==='live'?'circle':'flask' %>"></i>
+          <%= razorpayMode==='live' ? 'LIVE PAYMENT' : 'TEST MODE' %>
+        </span>
+
+        <!-- Hero -->
+        <div class="pay-hero">
+          <div class="pay-hero-icon"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <h1>Secure Escrow Payment</h1>
+            <p>Project: <strong><%= project.title %></strong></p>
+            <p>Freelancer: <strong><%= project.hiredFreelancer?.name %></strong></p>
+          </div>
+        </div>
+
+        <% if (existing && ['paid','released','completed'].includes(existing.status)) { %>
+
+          <div class="paid-box">
+            <i class="fas fa-check-circle"></i>
+            <h3>Payment Already Done!</h3>
+            <p>You paid ₹<%= existing.totalAmount?.toLocaleString('en-IN') %> for this project.</p>
+            <p style="margin-top:6px">Status: <strong class="badge status-<%= existing.status %>"><%= existing.status.toUpperCase() %></strong></p>
+          </div>
+
+        <% } else { %>
+
+          <%# Warn if freelancer hasn't set payout details yet %>
+          <% if (!project.hiredFreelancer?.payoutMethod) { %>
+          <div class="warn-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+              <h4>Freelancer payout not configured</h4>
+              <p>The freelancer hasn't saved their bank/UPI details yet. You can still pay — they will be asked to add details before admin releases the amount.</p>
+            </div>
+          </div>
+          <% } %>
+
+          <!-- Breakdown -->
+          <div class="breakdown">
+            <div class="brow">
+              <span class="brow-lbl"><i class="fas fa-briefcase"></i> Project Budget</span>
+              <span class="brow-val">₹<%= project.budget.toLocaleString('en-IN') %></span>
+            </div>
+            <div class="brow">
+              <span class="brow-lbl"><i class="fas fa-hand-holding-usd" style="color:var(--success)"></i> Freelancer Receives (90%)</span>
+              <span class="brow-val" style="color:var(--success)">₹<%= freelancerAmount.toLocaleString('en-IN') %></span>
+            </div>
+            <div class="brow">
+              <span class="brow-lbl"><i class="fas fa-percent" style="color:var(--text-muted)"></i> Platform Commission (10%)</span>
+              <span class="brow-val" style="color:var(--text-muted)">₹<%= platformFee.toLocaleString('en-IN') %></span>
+            </div>
+            <div class="brow total">
+              <span class="brow-lbl"><i class="fas fa-rupee-sign"></i> Total You Pay</span>
+              <span class="brow-val">₹<%= project.budget.toLocaleString('en-IN') %></span>
+            </div>
+          </div>
+
+          <!-- Security note -->
+          <div class="sec-note">
+            <i class="fas fa-lock"></i>
+            <div>
+              <h4>Escrow Protection</h4>
+              <p>Your money is held securely until you mark the project complete. The freelancer gets ₹<%= freelancerAmount.toLocaleString('en-IN') %> transferred to their bank/UPI by our admin. The 10% fee supports platform operations.</p>
+            </div>
+          </div>
+
+          <!-- Flow -->
+          <div class="flow-card">
+            <h4>How payment works</h4>
+            <div class="step"><div class="step-n">1</div><div class="step-txt"><strong>You pay now</strong><span>Money held securely in escrow</span></div></div>
+            <div class="step"><div class="step-n">2</div><div class="step-txt"><strong>Freelancer completes the work</strong><span>Submit daily reports, final delivery</span></div></div>
+            <div class="step"><div class="step-n">3</div><div class="step-txt"><strong>You approve &amp; mark complete</strong><span>From My Projects → Complete button</span></div></div>
+            <div class="step"><div class="step-n">4</div><div class="step-txt"><strong>Admin releases payment</strong><span>₹<%= freelancerAmount.toLocaleString('en-IN') %> sent to freelancer's bank/UPI within 1–2 business days</span></div></div>
+          </div>
+
+          <!-- Pay button -->
+          <button id="payBtn" class="btn btn-primary pay-btn" onclick="startPayment()">
+            <i class="fas fa-lock"></i>
+            Pay ₹<%= project.budget.toLocaleString('en-IN') %> · Secure Escrow
+          </button>
+          <p class="rzp-note">
+            <i class="fas fa-shield-alt" style="color:#3395ff"></i>
+            Secured by Razorpay &nbsp;·&nbsp; UPI · Cards · Net Banking · Wallets
+            <% if(razorpayMode==='test'){ %> &nbsp;·&nbsp; <strong style="color:#d97706">TEST MODE</strong><% } %>
+          </p>
+
+        <% } %>
+      </div>
+    </main>
+  </div>
+
+  <!-- Success overlay -->
+  <div id="succOverlay">
+    <div class="succ-box">
+      <div class="succ-ring"><i class="fas fa-check"></i></div>
+      <h2>Payment Successful!</h2>
+      <p style="color:var(--text-secondary);margin:10px 0 6px">₹<%= project.budget.toLocaleString('en-IN') %> is now held in escrow.</p>
+      <p style="color:var(--text-muted);font-size:.83rem;margin-bottom:22px">Once you mark the project complete, ₹<%= freelancerAmount.toLocaleString('en-IN') %> will be sent to the freelancer's registered bank/UPI account by our admin.</p>
+      <a href="/client/my-projects" class="btn btn-primary btn-full">Go to My Projects</a>
+    </div>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    const USER_ID    = '<%= currentUser._id %>';
+    const PROJECT_ID = '<%= project._id %>';
+
+    async function startPayment() {
+      const btn = document.getElementById('payBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating order...';
+
+      try {
+        const r = await fetch('/payments/create-order', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body:   JSON.stringify({ projectId: PROJECT_ID })
+        });
+        const d = await r.json();
+        if (!d.success) { alert(d.message || 'Failed'); resetBtn(); return; }
+
+        const rzp = new Razorpay({
+          key:         d.key,
+          amount:      d.amount,
+          currency:    d.currency,
+          name:        'FreelanceHub',
+          description: d.project.title,
+          order_id:    d.orderId,
+          prefill:     { name: d.user.name, email: d.user.email, contact: d.user.phone },
+          theme:       { color: '#6c63ff' },
+          modal:       { ondismiss: resetBtn },
+          handler: async (resp) => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            const vr = await fetch('/payments/verify', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body:   JSON.stringify({
+                razorpay_order_id:   resp.razorpay_order_id,
+                razorpay_payment_id: resp.razorpay_payment_id,
+                razorpay_signature:  resp.razorpay_signature,
+                projectId:           PROJECT_ID
+              })
+            });
+            const vd = await vr.json();
+            if (vd.success) {
+              document.getElementById('succOverlay').classList.add('show');
+            } else {
+              alert('Verification failed. Contact support. Payment ID: ' + resp.razorpay_payment_id);
+              resetBtn();
+            }
+          }
+        });
+        rzp.on('payment.failed', e => { alert('Payment failed: ' + e.error.description); resetBtn(); });
+        rzp.open();
+
+      } catch (e) { console.error(e); alert('Something went wrong. Try again.'); resetBtn(); }
+    }
+
+    function resetBtn() {
+      const btn = document.getElementById('payBtn');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-lock"></i> Pay ₹<%= project.budget.toLocaleString("en-IN") %> · Secure Escrow';
+    }
+  </script>
+</body>
+</html>

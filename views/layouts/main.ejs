@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'FreelanceHub' %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <%- body %>
+    </main>
+  </div>
+  <% if (currentUser) { %>
+<script>
+  const USER_ID = '<%= currentUser._id %>';
+</script>
+<% } else { %>
+<script>
+  const USER_ID = null;
+</script>
+<% } %>
+
+<script src="/js/main.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/notifications.js"></script>
+</body>
+</html>

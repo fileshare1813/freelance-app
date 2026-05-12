@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="back-nav"><a href="/client/find-freelancer" class="back-link"><i class="fas fa-arrow-left"></i> Back to Search</a></div>
+      <div class="profile-layout">
+        <!-- Left: Profile Info -->
+        <div class="profile-sidebar-card">
+          <div class="profile-avatar-wrap">
+            <img src="<%= freelancer.googleAvatar || '/avatar/' + freelancer._id %>"
+              class="profile-avatar-lg" onerror="this.src='/images/default-avatar.png'">
+            <div class="avail-badge avail-<%= freelancer.availability || 'available' %>">
+              <%= (freelancer.availability || 'available').replace('_',' ') %>
+            </div>
+          </div>
+          <h2 class="profile-name"><%= freelancer.name %></h2>
+          <div class="rating-row rating-lg">
+            <% for(let i=1;i<=5;i++) { %>
+              <i class="fas fa-star <%= i <= Math.round(freelancer.rating||0) ? 'star-filled' : 'star-empty' %>"></i>
+            <% } %>
+            <span>(<%= freelancer.reviewCount || 0 %> reviews)</span>
+          </div>
+          <div class="profile-stats-row">
+            <div class="pstat"><div class="pstat-val"><%= freelancer.completedProjects || 0 %></div><div class="pstat-label">Projects</div></div>
+            <div class="pstat"><div class="pstat-val">₹<%= (freelancer.totalEarnings||0).toLocaleString('en-IN') %></div><div class="pstat-label">Earned</div></div>
+            <div class="pstat"><div class="pstat-val"><%= freelancer.hourlyRate ? '₹'+freelancer.hourlyRate : 'N/A' %></div><div class="pstat-label">Per Hour</div></div>
+          </div>
+          <% if (freelancer.location) { %><p class="profile-meta-item"><i class="fas fa-map-marker-alt"></i> <%= freelancer.location %></p><% } %>
+          <% if (freelancer.website) { %><p class="profile-meta-item"><i class="fas fa-globe"></i> <a href="<%= freelancer.website %>" target="_blank"><%= freelancer.website %></a></p><% } %>
+          <% if (freelancer.phone) { %><p class="profile-meta-item"><i class="fas fa-phone"></i> <%= freelancer.phone %></p><% } %>
+          <div class="profile-actions">
+            <% if (existingConv) { %>
+              <a href="/messages/<%= existingConv._id %>" class="btn btn-primary btn-full"><i class="fas fa-comment"></i> Continue Chat</a>
+            <% } else { %>
+              <form action="/messages/start" method="POST">
+                <input type="hidden" name="userId" value="<%= freelancer._id %>">
+                <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-comment"></i> Send Message</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+        <!-- Right: Details -->
+        <div class="profile-main">
+          <div class="profile-section-card">
+            <h3><i class="fas fa-user"></i> About</h3>
+            <p><%= freelancer.bio || 'This freelancer has not added a bio yet.' %></p>
+          </div>
+          <div class="profile-section-card">
+            <h3><i class="fas fa-code"></i> Skills</h3>
+            <div class="tags-row tags-lg">
+              <% (freelancer.skills || []).forEach(sk => { %><span class="tag tag-lg"><%= sk %></span><% }) %>
+              <% if (!(freelancer.skills||[]).length) { %><p class="text-muted">No skills listed yet.</p><% } %>
+            </div>
+          </div>
+          <% if ((freelancer.portfolio||[]).length > 0) { %>
+          <div class="profile-section-card">
+            <h3><i class="fas fa-briefcase"></i> Portfolio</h3>
+            <div class="portfolio-grid">
+              <% freelancer.portfolio.forEach(item => { %>
+              <div class="portfolio-item">
+                <h4><%= item.title %></h4>
+                <p><%= item.description %></p>
+                <% if (item.link) { %><a href="<%= item.link %>" target="_blank" class="btn btn-sm btn-outline"><i class="fas fa-external-link-alt"></i> View</a><% } %>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+          <% } %>
+          <% if (completedProjects.length > 0) { %>
+          <div class="profile-section-card">
+            <h3><i class="fas fa-check-circle"></i> Completed Projects</h3>
+            <% completedProjects.forEach(p => { %>
+            <div class="completed-project-item">
+              <div class="fw-bold"><%= p.title %></div>
+              <div class="text-muted small">Client: <%= p.client?.name || 'N/A' %> · Completed: <%= p.completedAt ? new Date(p.completedAt).toLocaleDateString('en-IN') : 'N/A' %></div>
+              <div>Budget: ₹<%= (p.budget||0).toLocaleString('en-IN') %></div>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

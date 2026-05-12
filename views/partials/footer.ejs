@@ -1,0 +1,141 @@
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">⚡ FreelanceHub</span>
+      <p class="footer-tagline">Connect. Create. Collaborate.</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <div class="footer-col-title">Platform</div>
+        <% if (currentUser) { %>
+          <% if (currentUser.role === 'client') { %>
+            <a href="/client/post-project">Post a Project</a>
+            <a href="/client/find-freelancer">Find Talent</a>
+            <a href="/client/my-projects">My Projects</a>
+          <% } else if (currentUser.role === 'freelancer') { %>
+            <a href="/freelancer/browse-projects">Browse Projects</a>
+            <a href="/freelancer/my-proposals">My Proposals</a>
+            <a href="/freelancer/edit-profile">Edit Profile</a>
+          <% } %>
+        <% } else { %>
+          <a href="/auth/register">Get Started</a>
+          <a href="/auth/login">Login</a>
+        <% } %>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Account</div>
+        <% if (currentUser) { %>
+          <a href="/profile">My Profile</a>
+          <a href="/messages">Messages</a>
+          <a href="/notifications">Notifications</a>
+          <a href="/auth/logout">Logout</a>
+        <% } else { %>
+          <a href="/auth/register?role=client">Hire Talent</a>
+          <a href="/auth/register?role=freelancer">Find Work</a>
+          <a href="/auth/forgot-password">Reset Password</a>
+        <% } %>
+      </div>
+      <div class="footer-col">
+        <div class="footer-col-title">Support</div>
+        <a href="mailto:support@freelancehub.com">Contact Support</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Help Center</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© <%= new Date().getFullYear() %> FreelanceHub. All rights reserved.</span>
+    <div class="footer-socials">
+      <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+      <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+      <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+    </div>
+  </div>
+</footer>
+
+<style>
+.site-footer {
+  background: #1a1a2e;
+  color: rgba(255,255,255,0.7);
+  margin-top: auto;
+}
+.footer-inner {
+  display: flex;
+  gap: 48px;
+  padding: 40px 32px 28px;
+  flex-wrap: wrap;
+}
+.footer-brand {
+  flex: 0 0 200px;
+}
+.footer-logo {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.footer-tagline {
+  font-size: 0.82rem;
+  margin-top: 6px;
+  opacity: 0.6;
+}
+.footer-links {
+  display: flex;
+  gap: 40px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+.footer-col-title {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.footer-col a {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-col a:hover {
+  color: #fff;
+}
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  opacity: 0.6;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.footer-socials {
+  display: flex;
+  gap: 14px;
+}
+.footer-socials a {
+  color: rgba(255,255,255,0.6);
+  font-size: 1rem;
+  transition: color 0.2s;
+  text-decoration: none;
+}
+.footer-socials a:hover {
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .footer-inner { padding: 28px 20px; gap: 28px; }
+  .footer-links { gap: 24px; }
+  .footer-bottom { padding: 14px 20px; }
+}
+</style>

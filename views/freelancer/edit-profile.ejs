@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+      <div class="page-header">
+        <div><h1 class="page-title">Edit Profile</h1><p class="page-subtitle">Update your public profile</p></div>
+      </div>
+      <div class="form-card">
+        <form action="/freelancer/edit-profile" method="POST" enctype="multipart/form-data" class="profile-form">
+          <div class="form-section">
+            <h3><i class="fas fa-camera"></i> Profile Photo</h3>
+            <div class="avatar-upload-wrap">
+              <img src="<%= user.googleAvatar || '/avatar/' + user._id %>"
+                class="avatar-preview" id="avatarPreview" onerror="this.src='/images/default-avatar.png'">
+              <div>
+                <label for="avatarInput" class="btn btn-outline btn-sm"><i class="fas fa-upload"></i> Upload Photo</label>
+                <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+                <p class="form-hint">Max 5MB. JPG, PNG, GIF, WebP</p>
+                <% if (user.googleAvatar) { %><p class="form-hint text-info"><i class="fas fa-google"></i> Currently using Google profile photo</p><% } %>
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h3><i class="fas fa-user"></i> Basic Info</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" name="name" class="form-input" value="<%= user.name %>" required>
+              </div>
+              <div class="form-group">
+                <label>Location</label>
+                <input type="text" name="location" class="form-input" value="<%= user.location || '' %>" placeholder="City, Country">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Bio</label>
+              <textarea name="bio" class="form-textarea" rows="4" placeholder="Tell clients about yourself, your expertise, and what makes you unique..." maxlength="500"><%= user.bio || '' %></textarea>
+              <small class="form-hint"><span id="bioCount"><%= (user.bio||'').length %></span>/500</small>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" name="phone" class="form-input" value="<%= user.phone || '' %>" placeholder="+91 9999999999">
+              </div>
+              <div class="form-group">
+                <label>Website / Portfolio URL</label>
+                <input type="url" name="website" class="form-input" value="<%= user.website || '' %>" placeholder="https://yoursite.com">
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <h3><i class="fas fa-code"></i> Professional Info</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Hourly Rate (₹)</label>
+                <input type="number" name="hourlyRate" class="form-input" value="<%= user.hourlyRate || '' %>" placeholder="e.g. 1500" min="0">
+              </div>
+              <div class="form-group">
+                <label>Availability</label>
+                <select name="availability" class="form-select">
+                  <option value="available" <%= user.availability === 'available' ? 'selected' : '' %>>Available</option>
+                  <option value="busy" <%= user.availability === 'busy' ? 'selected' : '' %>>Busy</option>
+                  <option value="not_available" <%= user.availability === 'not_available' ? 'selected' : '' %>>Not Available</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Skills (comma-separated)</label>
+              <input type="text" name="skills" class="form-input" id="skillsInput"
+                value="<%= (user.skills||[]).join(', ') %>" placeholder="e.g. React, Node.js, MongoDB">
+              <div class="skill-suggestions">
+                <% ['JavaScript','Python','React','Node.js','MongoDB','PHP','Laravel','Flutter','Django','Vue.js','Docker','AWS','Figma','WordPress'].forEach(s => { %>
+                  <span class="skill-chip" onclick="addSkill('<%= s %>')"><%= s %></span>
+                <% }) %>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save"></i> Save Profile</button>
+            <a href="/profile" class="btn btn-outline btn-lg">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    const USER_ID = '<%= currentUser._id %>';
+    function previewAvatar(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => document.getElementById('avatarPreview').src = e.target.result;
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+    function addSkill(skill) {
+      const input = document.getElementById('skillsInput');
+      const skills = input.value ? input.value.split(',').map(s => s.trim()) : [];
+      if (!skills.includes(skill)) { skills.push(skill); input.value = skills.join(', '); }
+    }
+    const bioTA = document.querySelector('textarea[name="bio"]');
+    const bioCount = document.getElementById('bioCount');
+    if(bioTA) bioTA.addEventListener('input', () => bioCount.textContent = bioTA.value.length);
+  </script>
+</body>
+</html>

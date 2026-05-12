@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* ── Payout banner ───────────────────────────── */
+    .setup-banner{
+      background:linear-gradient(135deg,#6c63ff 0%,#764ba2 100%);
+      border-radius:var(--radius-md); padding:22px 26px; color:#fff; margin-bottom:22px;
+    }
+    .setup-banner h3{ font-size:1.05rem; font-weight:700; margin-bottom:5px; }
+    .setup-banner p{ opacity:.85; font-size:.87rem; margin-bottom:14px; }
+
+    .setup-ok{
+      background:#f0fdf4; border:1px solid #86efac;
+      border-radius:var(--radius-md); padding:14px 18px;
+      display:flex; align-items:center; gap:12px; margin-bottom:22px;
+    }
+    .setup-ok i{ font-size:1.5rem; color:var(--success); }
+    .setup-ok h4{ font-size:.92rem; font-weight:700; color:#166534; }
+    .setup-ok p{ font-size:.82rem; color:#16a34a; }
+
+    /* ── Summary ─────────────────────────────────── */
+    .sum-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:22px; }
+    .sum-card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:16px; text-align:center; }
+    .sum-card i{ font-size:1.4rem; margin-bottom:8px; display:block; }
+    .sum-card .v{ font-size:1.25rem; font-weight:800; }
+    .sum-card .l{ font-size:.75rem; color:var(--text-muted); }
+
+    /* ── Payment cards ───────────────────────────── */
+    .pcard{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; margin-bottom:12px; }
+    .pcard-head{ display:flex; justify-content:space-between; align-items:flex-start; padding:14px 18px; background:var(--secondary); flex-wrap:wrap; gap:10px; }
+    .pcard-body{ padding:14px 18px; }
+    .amt-big{ font-size:1.4rem; font-weight:800; color:var(--primary); }
+    .amt-total{ font-size:.78rem; color:var(--text-muted); }
+
+    /* Status chips */
+    .chip{ display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:600; }
+    .chip-pending{ background:#fef3c7; color:#d97706; }
+    .chip-paid{ background:#dbeafe; color:#2563eb; }
+    .chip-released{ background:#ede9ff; color:#6c63ff; }
+    .chip-completed{ background:#dcfce7; color:#16a34a; }
+    .chip-failed{ background:#fee2e2; color:#dc2626; }
+
+    .status-bar{ border-radius:var(--radius-sm); padding:10px 14px; font-size:.84rem; margin-top:10px; }
+    .bar-blue{ background:#dbeafe; color:#1d4ed8; }
+    .bar-purple{ background:#ede9ff; color:#5b21b6; }
+    .bar-green{ background:#dcfce7; color:#166534; }
+    .bar-red{ background:#fee2e2; color:#991b1b; }
+
+    /* ── Payout form ──────────────────────────────── */
+    .payout-form-card{ background:#fff; border:1px solid var(--border); border-radius:var(--radius-md); padding:22px 26px; max-width:540px; margin-top:30px; }
+    .payout-form-card h3{ font-size:1rem; font-weight:700; margin-bottom:5px; }
+    .payout-form-card .sub{ color:var(--text-muted); font-size:.85rem; margin-bottom:18px; }
+
+    .mtabs{ display:flex; gap:10px; margin-bottom:16px; }
+    .mtab{ flex:1; padding:10px; border:2px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; text-align:center; font-weight:600; font-size:.88rem; background:#fff; transition:var(--transition); }
+    .mtab.active{ border-color:var(--primary); background:var(--primary-light); color:var(--primary); }
+
+    .inline-msg{ display:none; padding:10px 14px; border-radius:var(--radius-sm); font-size:.86rem; margin-bottom:12px; }
+  </style>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+
+      <div class="page-header">
+        <div><h1 class="page-title">My Payments</h1><p class="page-subtitle">Track your earnings &amp; payout status</p></div>
+      </div>
+
+      <!-- ── Payout account status ── -->
+      <% if (!hasPayoutSetup) { %>
+      <div class="setup-banner">
+        <h3><i class="fas fa-university"></i>&nbsp; Set Up Your Payout Account</h3>
+        <p>Add your bank account or UPI ID so admin can transfer your earnings after project completion. Required before any payment can be released to you.</p>
+        <a href="#payoutForm" class="btn" style="background:#fff;color:#6c63ff;font-weight:700">
+          <i class="fas fa-arrow-down"></i> Setup Now
+        </a>
+      </div>
+      <% } else { %>
+      <div class="setup-ok">
+        <i class="fas fa-check-circle"></i>
+        <div>
+          <h4>Payout Account Configured ✓</h4>
+          <p>
+            <% if(user.payoutDetails?.method==='upi'){ %>
+              UPI: <strong><%= user.payoutDetails.upiId %></strong>
+            <% } else { %>
+              Bank: <strong><%= user.payoutDetails.accountName %></strong> · A/C ****<%= user.payoutDetails.accountNumber?.slice(-4) %> · IFSC: <%= user.payoutDetails.ifsc %>
+            <% } %>
+            &nbsp;·&nbsp;<a href="#payoutForm" style="font-size:.8rem">Update</a>
+          </p>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- ── Summary stats ── -->
+      <%
+        const totalEarned   = payments.filter(p=>p.status==='completed').reduce((s,p)=>s+p.freelancerAmount,0);
+        const inEscrow      = payments.filter(p=>p.status==='paid').reduce((s,p)=>s+p.freelancerAmount,0);
+        const inRelease     = payments.filter(p=>p.status==='released').reduce((s,p)=>s+p.freelancerAmount,0);
+      %>
+      <div class="sum-grid">
+        <div class="sum-card">
+          <i class="fas fa-check-circle" style="color:var(--success)"></i>
+          <div class="v">₹<%= totalEarned.toLocaleString('en-IN') %></div>
+          <div class="l">Total Received</div>
+        </div>
+        <div class="sum-card">
+          <i class="fas fa-lock" style="color:var(--primary)"></i>
+          <div class="v">₹<%= inEscrow.toLocaleString('en-IN') %></div>
+          <div class="l">In Escrow</div>
+        </div>
+        <div class="sum-card">
+          <i class="fas fa-paper-plane" style="color:var(--warning)"></i>
+          <div class="v">₹<%= inRelease.toLocaleString('en-IN') %></div>
+          <div class="l">Being Transferred</div>
+        </div>
+        <div class="sum-card">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <div class="v"><%= payments.length %></div>
+          <div class="l">Total Payments</div>
+        </div>
+      </div>
+
+      <!-- ── Payment list ── -->
+      <% if(payments.length===0){ %>
+        <div class="empty-state-box">
+          <i class="fas fa-wallet fa-3x"></i>
+          <h3>No payments yet</h3>
+          <p>Complete projects to start earning.</p>
+        </div>
+      <% } %>
+
+      <% const chipMap={pending:'chip-pending',paid:'chip-paid',released:'chip-released',completed:'chip-completed',failed:'chip-failed'}; %>
+      <% payments.forEach(pay=>{ %>
+      <div class="pcard">
+        <div class="pcard-head">
+          <div>
+            <div class="fw-bold" style="font-size:1rem"><%= pay.project?.title %></div>
+            <div class="text-muted small">Client: <%= pay.client?.name %> · <%= new Date(pay.createdAt).toLocaleDateString('en-IN') %></div>
+          </div>
+          <div style="text-align:right">
+            <div class="amt-big">₹<%= pay.freelancerAmount?.toLocaleString('en-IN') %></div>
+            <div class="amt-total">Total paid: ₹<%= pay.totalAmount?.toLocaleString('en-IN') %></div>
+            <span class="chip <%= chipMap[pay.status]||'chip-pending' %>"><%= pay.status %></span>
+          </div>
+        </div>
+        <div class="pcard-body">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.83rem;color:var(--text-secondary);margin-bottom:6px">
+            <span><i class="fas fa-percent"></i> Platform fee: ₹<%= pay.platformFee?.toLocaleString('en-IN') %></span>
+            <% if(pay.razorpayPaymentId){ %><span><i class="fas fa-fingerprint"></i> <%= pay.razorpayPaymentId %></span><% } %>
+            <span class="badge <%= pay.razorpayMode==='live'?'badge-success':'badge-warning' %>"><%= (pay.razorpayMode||'test').toUpperCase() %></span>
+          </div>
+
+          <!-- Status messages -->
+          <% if(pay.status==='paid'){ %>
+            <div class="status-bar bar-blue"><i class="fas fa-lock"></i> Money in escrow — waiting for client to mark project complete.</div>
+          <% } else if(pay.status==='released'){ %>
+            <div class="status-bar bar-purple">
+              <i class="fas fa-paper-plane"></i> Payment released! Admin is transferring ₹<%= pay.freelancerAmount?.toLocaleString('en-IN') %> to your account.
+              <% if(pay.payoutSnapshot?.method==='upi'){ %> (UPI: <%= pay.payoutSnapshot.upiId %>) <% } else if(pay.payoutSnapshot?.method==='bank'){ %> (A/C: ****<%= pay.payoutSnapshot.accountNumber?.slice(-4) %>) <% } %>
+              <% if(pay.adminNote){ %><br><small>Admin note: <%= pay.adminNote %></small><% } %>
+            </div>
+          <% } else if(pay.status==='completed'){ %>
+            <div class="status-bar bar-green"><i class="fas fa-check-double"></i> ₹<%= pay.freelancerAmount?.toLocaleString('en-IN') %> successfully received! 🎉 (<%= pay.completedAt ? new Date(pay.completedAt).toLocaleDateString('en-IN') : '' %>)</div>
+          <% } else if(pay.status==='failed'){ %>
+            <div class="status-bar bar-red"><i class="fas fa-exclamation-triangle"></i> Payment issue — admin has been notified and will resolve shortly.</div>
+          <% } %>
+        </div>
+      </div>
+      <% }) %>
+
+      <!-- ── Payout Details Form ── -->
+      <div id="payoutForm" style="scroll-margin-top:80px">
+        <div class="payout-form-card">
+          <h3><i class="fas fa-university"></i> <%= hasPayoutSetup ? 'Update' : 'Add' %> Payout Account</h3>
+          <p class="sub">Admin will transfer your earnings to this account via Razorpay after project completion.</p>
+
+          <div class="mtabs">
+            <button class="mtab active" id="tab_upi"  onclick="switchTab('upi')"  type="button"><i class="fas fa-mobile-alt"></i> UPI</button>
+            <button class="mtab"        id="tab_bank" onclick="switchTab('bank')" type="button"><i class="fas fa-university"></i> Bank Account</button>
+          </div>
+
+          <!-- UPI -->
+          <div id="form_upi">
+            <div class="form-group">
+              <label>UPI ID *</label>
+              <input type="text" class="form-input" id="upiId"
+                value="<%= user.payoutDetails?.upiId||'' %>"
+                placeholder="name@ybl  /  9999999999@paytm  /  name@oksbi">
+              <small class="form-hint">Accepted: @ybl · @paytm · @oksbi · @okaxis · @upi · etc.</small>
+            </div>
+          </div>
+
+          <!-- Bank (hidden initially) -->
+          <div id="form_bank" style="display:none">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Account Holder Name *</label>
+                <input type="text" class="form-input" id="accName"
+                  value="<%= user.payoutDetails?.accountName||'' %>"
+                  placeholder="As per bank records">
+              </div>
+              <div class="form-group">
+                <label>Account Number *</label>
+                <input type="text" class="form-input" id="accNum"
+                  value="<%= user.payoutDetails?.accountNumber||'' %>"
+                  placeholder="Enter account number">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>IFSC Code *</label>
+                <input type="text" class="form-input" id="ifsc"
+                  value="<%= user.payoutDetails?.ifsc||'' %>"
+                  placeholder="SBIN0001234" maxlength="11"
+                  oninput="this.value=this.value.toUpperCase()">
+              </div>
+              <div class="form-group">
+                <label>Bank Name</label>
+                <input type="text" class="form-input" id="bankName"
+                  value="<%= user.payoutDetails?.bankName||'' %>"
+                  placeholder="State Bank of India">
+              </div>
+            </div>
+          </div>
+
+          <div id="inlineMsg" class="inline-msg"></div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="savePayout()" id="saveBtn">
+              <i class="fas fa-save"></i> Save Payout Details
+            </button>
+          </div>
+          <p style="font-size:.73rem;color:var(--text-muted);margin-top:8px">
+            <i class="fas fa-shield-alt" style="color:#3395ff"></i>
+            Your details are encrypted and only used by our admin to process your payment.
+          </p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script>
+    const USER_ID   = '<%= currentUser._id %>';
+    let activeTab   = '<%= user.payoutDetails?.method || "upi" %>';
+    switchTab(activeTab);
+
+    function switchTab(m) {
+      activeTab = m;
+      document.getElementById('form_upi').style.display  = m==='upi'  ? 'block' : 'none';
+      document.getElementById('form_bank').style.display = m==='bank' ? 'block' : 'none';
+      document.getElementById('tab_upi').classList.toggle('active',  m==='upi');
+      document.getElementById('tab_bank').classList.toggle('active', m==='bank');
+    }
+
+    async function savePayout() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      const payload = { method: activeTab };
+      if (activeTab === 'upi') {
+        payload.upiId = document.getElementById('upiId').value.trim();
+        if (!payload.upiId) { showMsg('Please enter your UPI ID', 'error'); resetSaveBtn(); return; }
+      } else {
+        payload.accountName   = document.getElementById('accName').value.trim();
+        payload.accountNumber = document.getElementById('accNum').value.trim();
+        payload.ifsc          = document.getElementById('ifsc').value.trim();
+        payload.bankName      = document.getElementById('bankName').value.trim();
+        if (!payload.accountName || !payload.accountNumber || !payload.ifsc) {
+          showMsg('Please fill Account Name, Number and IFSC', 'error'); resetSaveBtn(); return;
+        }
+      }
+
+      try {
+        const r = await fetch('/payments/save-payout-details', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (d.success) {
+          showMsg(d.message, 'success');
+          setTimeout(() => location.reload(), 1800);
+        } else {
+          showMsg(d.message || 'Failed to save', 'error');
+          resetSaveBtn();
+        }
+      } catch(e) { showMsg('Network error. Try again.', 'error'); resetSaveBtn(); }
+    }
+
+    function showMsg(msg, type) {
+      const el = document.getElementById('inlineMsg');
+      el.style.display = 'block';
+      el.style.background = type==='success' ? '#dcfce7' : '#fee2e2';
+      el.style.color      = type==='success' ? '#166534' : '#991b1b';
+      el.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}"></i> ${msg}`;
+    }
+    function resetSaveBtn() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Save Payout Details';
+    }
+  </script>
+</body>
+</html>
