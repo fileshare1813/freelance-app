@@ -1,3 +1,4 @@
+<%# views/partials/navbar.ejs — add theme toggle button in nav-right %>
 <nav class="navbar">
   <div class="nav-brand">
     <a href="/" class="brand-link">
@@ -25,6 +26,12 @@
     <% } %>
   </div>
   <div class="nav-right">
+
+    <!-- Dark / Light Mode Toggle -->
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Theme" aria-label="Toggle dark/light mode">
+      <i class="fas fa-moon"></i>
+    </button>
+
     <% if (currentUser) { %>
       <%- include('./notification-bell') %>
       <a href="/messages" class="nav-icon-btn" title="Messages">
