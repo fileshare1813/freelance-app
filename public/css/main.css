@@ -82,7 +82,16 @@ img { max-width: 100%; }
 .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid var(--border-light); }
 .sidebar-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
 .sidebar-name { font-weight: 600; font-size: 0.9rem; }
-.sidebar-role { font-size: 0.75rem; text-transform: capitalize; font-weight: 500; }
+.sidebar-role {
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  font-weight: 500;
+
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  color: #fff;
+}
 .sidebar-nav { flex: 1; padding: 8px 0; }
 .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; transition: var(--transition); border-radius: 0; }
 .sidebar-link:hover, .sidebar-link.active { background: var(--primary-light); color: var(--primary); border-left: 3px solid var(--primary); }

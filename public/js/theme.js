@@ -1,139 +1,153 @@
 // ===== THEME SYSTEM - FreelanceHub =====
 // Place this file at: public/js/theme.js
-// Include it in ALL views, preferably in <head> with defer, or at top of body
+// IMPORTANT: Include in EVERY view's <head> tag BEFORE main.css loads
+// Add this line in <head>: <script src="/js/theme.js"></script>
 
 (function () {
-  const STORAGE_KEY = 'fh_theme';
-  const DARK  = 'dark';
-  const LIGHT = 'light';
+  'use strict';
 
-  // ── Apply theme immediately (before paint) to avoid flash ──
-  function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.body && document.body.setAttribute('data-theme', theme);
-    updateToggleIcon(theme);
-    updateChartColors(theme);
+  var STORAGE_KEY = 'fh_theme';
+  var DARK  = 'dark';
+  var LIGHT = 'light';
+
+  // ── 1. Read saved preference ──────────────────────────────────────
+  function getSaved() {
+    try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
   }
 
-  function updateToggleIcon(theme) {
-    const btn = document.getElementById('themeToggleBtn');
+  function save(theme) {
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch (e) {}
+  }
+
+  // ── 2. Get OS preference ─────────────────────────────────────────
+  function getOS() {
+    try {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
+    } catch (e) { return LIGHT; }
+  }
+
+  // ── 3. Apply theme to <html> immediately (no flash) ───────────────
+  function applyNow(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  // Apply ASAP — runs synchronously before any rendering
+  var initial = getSaved() || getOS();
+  applyNow(initial);
+
+  // ── 4. Full apply (includes icon + chart update) ──────────────────
+  function applyFull(theme) {
+    applyNow(theme);
+    updateIcon(theme);
+    updateCharts(theme);
+  }
+
+  // ── 5. Update the toggle button icon ─────────────────────────────
+  function updateIcon(theme) {
+    var btn = document.getElementById('themeToggleBtn');
     if (!btn) return;
-    const icon = btn.querySelector('i');
+    var icon = btn.querySelector('i');
     if (!icon) return;
     if (theme === DARK) {
       icon.className = 'fas fa-sun';
-      btn.title = 'Switch to Light Mode';
+      btn.setAttribute('title', 'Switch to Light Mode');
     } else {
       icon.className = 'fas fa-moon';
-      btn.title = 'Switch to Dark Mode';
+      btn.setAttribute('title', 'Switch to Dark Mode');
     }
   }
 
-  function getSavedTheme() {
-    try { return localStorage.getItem(STORAGE_KEY); } catch { return null; }
+  // ── 6. Toggle between dark and light ─────────────────────────────
+  function toggle() {
+    var current = document.documentElement.getAttribute('data-theme') || LIGHT;
+    var next = current === DARK ? LIGHT : DARK;
+    applyFull(next);
+    save(next);
   }
 
-  function saveTheme(theme) {
-    try { localStorage.setItem(STORAGE_KEY, theme); } catch {}
-  }
-
-  function getSystemTheme() {
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? DARK : LIGHT;
-  }
-
-  function getCurrentTheme() {
-    return document.documentElement.getAttribute('data-theme') || LIGHT;
-  }
-
-  function toggleTheme() {
-    const current = getCurrentTheme();
-    const next = current === DARK ? LIGHT : DARK;
-    applyTheme(next);
-    saveTheme(next);
-
-    // Trigger chart color update after a short delay (charts need re-render)
-    setTimeout(() => updateChartColors(next), 50);
-  }
-
-  // ── Chart.js color patching for dark mode ──
-  function updateChartColors(theme) {
+  // ── 7. Update Chart.js colors ────────────────────────────────────
+  function updateCharts(theme) {
     if (typeof Chart === 'undefined') return;
 
-    const isDark = theme === DARK;
+    var isDark    = theme === DARK;
+    var textColor = isDark ? '#94a3b8' : '#64748b';
+    var gridColor = isDark ? '#252540' : '#f1f5f9';
+    var bordColor = isDark ? '#2d2d4e' : '#e2e8f0';
 
-    const textColor   = isDark ? '#94a3b8' : '#64748b';
-    const gridColor   = isDark ? '#252540' : '#f1f5f9';
-    const borderColor = isDark ? '#2d2d4e' : '#e2e8f0';
+    Chart.defaults.color       = textColor;
+    Chart.defaults.borderColor = bordColor;
 
-    // Update defaults
-    Chart.defaults.color = textColor;
-    Chart.defaults.borderColor = borderColor;
+    // Update every existing chart instance
+    var instances = Chart.instances;
+    if (!instances) return;
 
-    // Update all existing chart instances
-    Object.values(Chart.instances || {}).forEach(chart => {
+    // Chart.js v4 returns an object keyed by id
+    Object.keys(instances).forEach(function (key) {
+      var chart = instances[key];
       if (!chart || !chart.options) return;
 
-      // Scales
-      if (chart.options.scales) {
-        ['x', 'y'].forEach(axis => {
-          const scale = chart.options.scales[axis];
-          if (!scale) return;
-          if (scale.ticks)  scale.ticks.color = textColor;
-          if (scale.grid)   scale.grid.color  = gridColor;
-        });
-      }
+      var scales = chart.options.scales || {};
+      ['x', 'y'].forEach(function (axis) {
+        if (!scales[axis]) return;
+        if (scales[axis].ticks) scales[axis].ticks.color = textColor;
+        if (scales[axis].grid)  scales[axis].grid.color  = gridColor;
+      });
 
-      // Legend
       if (chart.options.plugins && chart.options.plugins.legend) {
         chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
         chart.options.plugins.legend.labels.color = textColor;
       }
 
-      chart.update('none'); // 'none' = no animation, just re-render
+      chart.update('none'); // redraw without animation
     });
   }
 
-  // ── Init: apply saved/system theme immediately ──
-  const saved  = getSavedTheme();
-  const system = getSystemTheme();
-  const initial = saved || system;
-
-  // Apply synchronously so there's no flash
-  document.documentElement.setAttribute('data-theme', initial);
-
-  // ── Setup after DOM ready ──
+  // ── 8. Attach button listener + watch OS changes ──────────────────
   function setup() {
-    applyTheme(initial);
-
-    const btn = document.getElementById('themeToggleBtn');
-    if (btn) btn.addEventListener('click', toggleTheme);
-
-    // Watch OS theme changes (if user hasn't manually set one)
-    if (!saved && window.matchMedia) {
-      window.matchMedia('(prefers-color-scheme: dark)')
-        .addEventListener('change', e => {
-          const savedNow = getSavedTheme();
-          if (!savedNow) applyTheme(e.matches ? DARK : LIGHT);
-        });
+    // Attach toggle to button
+    var btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+      // Remove any old listener by cloning (safe pattern)
+      var fresh = btn.cloneNode(true);
+      btn.parentNode.replaceChild(fresh, btn);
+      fresh.addEventListener('click', toggle);
     }
 
-    // Re-patch charts whenever Chart.js finishes drawing
-    // (needed because charts initialize after this script runs)
+    // Set correct icon immediately
+    updateIcon(document.documentElement.getAttribute('data-theme') || initial);
+
+    // Watch OS preference changes (only when user hasn't set manually)
+    try {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+        if (!getSaved()) {
+          applyFull(e.matches ? DARK : LIGHT);
+        }
+      });
+    } catch (e) {}
+
+    // Patch Chart.js draw so future charts also get correct colors
     if (typeof Chart !== 'undefined') {
-      const origDraw = Chart.prototype.draw;
-      Chart.prototype.draw = function (...args) {
-        origDraw.apply(this, args);
-        updateChartColors(getCurrentTheme());
+      var origDraw = Chart.prototype.draw;
+      Chart.prototype.draw = function () {
+        origDraw.apply(this, arguments);
+        var theme = document.documentElement.getAttribute('data-theme') || LIGHT;
+        updateCharts(theme);
       };
     }
   }
 
+  // Run setup after DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
   } else {
     setup();
   }
 
-  // Expose for inline use
-  window.__fhTheme = { toggle: toggleTheme, apply: applyTheme, get: getCurrentTheme };
+  // ── 9. Public API (for inline scripts if needed) ──────────────────
+  window.__fhTheme = {
+    toggle : toggle,
+    apply  : applyFull,
+    get    : function () { return document.documentElement.getAttribute('data-theme') || LIGHT; }
+  };
+
 })();
