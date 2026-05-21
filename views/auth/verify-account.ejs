@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .warn-bar {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .va-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 44px);
+      padding: 20px;
+    }
+    .va-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 38px 34px;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.13);
+      text-align: center;
+    }
+    .va-icon {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6c63ff, #764ba2);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.75rem; color: #fff;
+    }
+    .va-card h2 {
+      font-size: 1.45rem; font-weight: 800;
+      color: #1a1a2e; margin-bottom: 6px;
+    }
+    .va-sub {
+      color: #64748b; font-size: 0.88rem;
+      line-height: 1.6; margin-bottom: 20px;
+    }
+    .email-chip {
+      display: inline-block;
+      background: #ede9ff; color: #6c63ff;
+      border-radius: 20px; padding: 4px 14px;
+      font-size: 0.84rem; font-weight: 600;
+      margin-bottom: 22px;
+    }
+    /* OTP boxes */
+    .otp-inputs {
+      display: flex; justify-content: center;
+      gap: 10px; margin: 4px 0 22px;
+    }
+    .otp-box {
+      width: 54px; height: 62px;
+      font-size: 1.5rem; font-weight: 800;
+      text-align: center;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px; color: #6c63ff;
+      outline: none; transition: all 0.2s;
+      background: #fafafa;
+    }
+    .otp-box:focus {
+      border-color: #6c63ff; background: #fff;
+      box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+      transform: scale(1.05);
+    }
+    .otp-box.filled { border-color: #6c63ff; background: #ede9ff; }
+    /* Resend */
+    .resend-row {
+      margin-top: 14px; font-size: 0.84rem; color: #64748b;
+    }
+    #resendTimer { font-weight: 700; color: #6c63ff; }
+    #resendBtnWrap { display: none; }
+    #resendBtnWrap button {
+      background: none; border: none;
+      color: #6c63ff; font-weight: 600;
+      cursor: pointer; font-size: 0.88rem;
+      text-decoration: underline;
+    }
+    /* Warning info */
+    .warn-info {
+      background: #fffbeb; border: 1px solid #fde68a;
+      border-radius: 10px; padding: 12px 15px;
+      margin-top: 18px; text-align: left;
+    }
+    .warn-info p {
+      color: #92400e; font-size: 0.81rem;
+      margin: 0; line-height: 1.6;
+    }
+    /* Inline AJAX message */
+    #inlineMsg {
+      display: none; padding: 10px 14px;
+      border-radius: 8px; font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body class="auth-body">
+  <%- include('../partials/flash') %>
+
+  <!-- Red warning bar -->
+  <div class="warn-bar">
+    <i class="fas fa-exclamation-triangle"></i>
+    &nbsp;Yeh aapki last chance hai — 24 ghante me verify karein ya account ban ho jayega!
+  </div>
+
+  <div class="va-wrap">
+    <div class="va-card">
+
+      <div class="va-icon"><i class="fas fa-shield-alt"></i></div>
+      <h2>Account Verify Karein</h2>
+      <p class="va-sub">
+        Aapki warning email me bheja gaya <strong>5-digit OTP</strong> neeche enter karein.
+      </p>
+
+      <div class="email-chip">
+        <i class="fas fa-envelope" style="opacity:0.7;margin-right:5px;"></i><%= email %>
+      </div>
+
+      <!-- AJAX inline message -->
+      <div id="inlineMsg"></div>
+
+      <!-- OTP Form -->
+      <form action="/auth/verify-account" method="POST" id="vaForm">
+        <input type="hidden" name="email" value="<%= email %>">
+        <input type="hidden" name="token" value="<%= token %>">
+        <input type="hidden" name="otp"   id="otpHidden">
+
+        <div class="otp-inputs">
+          <input type="text" maxlength="1" class="otp-box" id="b1" autofocus inputmode="numeric" autocomplete="one-time-code">
+          <input type="text" maxlength="1" class="otp-box" id="b2" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" id="b3" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" id="b4" inputmode="numeric">
+          <input type="text" maxlength="1" class="otp-box" id="b5" inputmode="numeric">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg"
+                id="verifyBtn" disabled style="opacity:0.6;">
+          <i class="fas fa-check-circle"></i> Account Verify Karein
+        </button>
+      </form>
+
+      <!-- Resend timer -->
+      <div class="resend-row">
+        <span id="timerText">
+          Naya OTP <span id="resendTimer">60</span>s me bhej sakte hain
+        </span>
+        <span id="resendBtnWrap">
+          <button onclick="resendOTP()">
+            <i class="fas fa-redo"></i> Naya OTP Bhejein
+          </button>
+        </span>
+      </div>
+
+      <!-- Warning info box -->
+      <div class="warn-info">
+        <p>
+          <strong>⏰ Yaad rakhein:</strong> Verify na karne par account
+          <strong>permanently ban</strong> ho jayega. Problem ho to
+          <a href="mailto:support@freelancehub.com" style="color:#6c63ff;">
+            support@freelancehub.com
+          </a> par contact karein.
+        </p>
+      </div>
+
+      <div style="margin-top:18px;">
+        <a href="/auth/login" style="font-size:0.83rem;color:#94a3b8;">
+          ← Login page par wapas jayein
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/js/theme.js"></script>
+  <script>
+    // ── OTP Boxes ──────────────────────────────────────────────────────
+    const boxes     = ['b1','b2','b3','b4','b5'].map(id => document.getElementById(id));
+    const hidden    = document.getElementById('otpHidden');
+    const verifyBtn = document.getElementById('verifyBtn');
+
+    boxes.forEach((box, idx) => {
+      box.addEventListener('input', () => {
+        box.value = box.value.replace(/\D/g, '').slice(0, 1);
+        box.classList.toggle('filled', !!box.value);
+        if (box.value && idx < 4) boxes[idx + 1].focus();
+        syncCheck();
+      });
+      box.addEventListener('keydown', e => {
+        if (e.key === 'Backspace' && !box.value && idx > 0) {
+          boxes[idx - 1].value = '';
+          boxes[idx - 1].classList.remove('filled');
+          boxes[idx - 1].focus();
+          syncCheck();
+        }
+        if (e.key === 'ArrowLeft'  && idx > 0) boxes[idx - 1].focus();
+        if (e.key === 'ArrowRight' && idx < 4) boxes[idx + 1].focus();
+      });
+      box.addEventListener('paste', e => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData)
+          .getData('text').replace(/\D/g, '').slice(0, 5);
+        [...pasted].forEach((ch, i) => {
+          if (boxes[i]) { boxes[i].value = ch; boxes[i].classList.add('filled'); }
+        });
+        const next = boxes.findIndex(b => !b.value);
+        (next !== -1 ? boxes[next] : boxes[4]).focus();
+        syncCheck();
+      });
+    });
+
+    function syncCheck() {
+      const val = boxes.map(b => b.value).join('');
+      hidden.value = val;
+      const ok = val.length === 5 && !/\D/.test(val);
+      verifyBtn.disabled    = !ok;
+      verifyBtn.style.opacity = ok ? '1' : '0.6';
+      // Auto-submit when all 5 filled
+      if (ok) setTimeout(() => document.getElementById('vaForm').submit(), 250);
+    }
+
+    // ── Countdown Timer ────────────────────────────────────────────────
+    let secs = 60;
+    const timerEl   = document.getElementById('resendTimer');
+    const timerText = document.getElementById('timerText');
+    const resendWrap = document.getElementById('resendBtnWrap');
+
+    const ticker = setInterval(() => {
+      secs--;
+      if (timerEl) timerEl.textContent = secs;
+      if (secs <= 0) {
+        clearInterval(ticker);
+        if (timerText)  timerText.style.display  = 'none';
+        if (resendWrap) resendWrap.style.display  = 'inline';
+      }
+    }, 1000);
+
+    // ── Resend OTP (AJAX) ──────────────────────────────────────────────
+    async function resendOTP() {
+      const msgEl = document.getElementById('inlineMsg');
+      msgEl.style.display = 'none';
+      try {
+        const r = await fetch('/auth/verify-account/resend', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email: '<%= email %>', token: '<%= token %>' })
+        });
+        const d = await r.json();
+        msgEl.style.display    = 'block';
+        msgEl.style.background = d.success ? '#dcfce7' : '#fee2e2';
+        msgEl.style.color      = d.success ? '#166534' : '#991b1b';
+        msgEl.innerHTML = `<i class="fas fa-${d.success ? 'check-circle' : 'exclamation-circle'}"></i> ${d.message}`;
+        if (d.success) {
+          boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+          boxes[0].focus();
+          hidden.value = '';
+          verifyBtn.disabled     = true;
+          verifyBtn.style.opacity = '0.6';
+          resendWrap.style.display = 'none';
+          timerText.style.display  = 'inline';
+        }
+      } catch (e) {
+        msgEl.style.display    = 'block';
+        msgEl.style.background = '#fee2e2';
+        msgEl.style.color      = '#991b1b';
+        msgEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Try again.';
+      }
+    }
+
+    boxes[0] && boxes[0].focus();
+  </script>
+</body>
+</html>

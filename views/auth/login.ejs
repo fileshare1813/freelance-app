@@ -25,23 +25,51 @@
         <div class="feature-item"><i class="fas fa-check-circle"></i> Secure payments</div>
       </div>
     </div>
+
     <div class="auth-right">
       <div class="auth-card">
         <h2>Welcome Back</h2>
         <p class="auth-subtitle">Login to your account</p>
+
+        <%#
+          ── Unverified account message ──────────────────────────────────────
+          Sirf tab dikhao jab 'unverifiedRedirect' session flag set ho.
+          Flag postLogin mein set hota hai jab user unverified ho.
+          Verify-otp page par jaane ke baad flag clear ho jata hai.
+        %>
+        <% if (locals.showUnverifiedMsg) { %>
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;
+                    padding:12px 14px;margin-bottom:18px;font-size:0.84rem;color:#92400e;">
+          <p style="margin:0;font-weight:700;">
+            <i class="fas fa-envelope-open-text" style="margin-right:5px;"></i>
+            OTP aapke email par bhej diya gaya hai!
+          </p>
+          <p style="margin:6px 0 0;line-height:1.5;">
+            Aapka account verify nahi tha. Kripya apni email check karein aur
+            <strong>OTP enter karein</strong> verify karne ke liye.
+          </p>
+        </div>
+        <% } %>
+
         <form action="/auth/login" method="POST" class="auth-form">
           <div class="form-group">
             <label><i class="fas fa-envelope"></i> Email</label>
-            <input type="email" name="email" placeholder="your@email.com" required class="form-input">
+            <input type="email" name="email" placeholder="your@email.com"
+                   required class="form-input">
           </div>
           <div class="form-group">
             <label style="display:flex;justify-content:space-between;align-items:center;">
               <span><i class="fas fa-lock"></i> Password</span>
-              <a href="/auth/forgot-password" style="font-size:0.8rem;font-weight:500;color:#6c63ff;">Forgot Password?</a>
+              <a href="/auth/forgot-password"
+                 style="font-size:0.8rem;font-weight:500;color:#6c63ff;">
+                Forgot Password?
+              </a>
             </label>
             <div class="input-with-icon">
-              <input type="password" name="password" id="loginPassword" placeholder="••••••••" required class="form-input">
-              <button type="button" class="toggle-password" onclick="togglePass('loginPassword')">
+              <input type="password" name="password" id="loginPassword"
+                     placeholder="••••••••" required class="form-input">
+              <button type="button" class="toggle-password"
+                      onclick="togglePass('loginPassword')">
                 <i class="fas fa-eye" id="loginPasswordIcon"></i>
               </button>
             </div>
@@ -50,15 +78,20 @@
             <i class="fas fa-sign-in-alt"></i> Login
           </button>
         </form>
+
         <div class="auth-divider"><span>or continue with</span></div>
         <a href="/auth/google" class="btn btn-google btn-full">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="20">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+               alt="Google" width="20">
           Continue with Google
         </a>
-        <p class="auth-switch">Don't have an account? <a href="/auth/register">Register here</a></p>
+        <p class="auth-switch">
+          Don't have an account? <a href="/auth/register">Register here</a>
+        </p>
       </div>
     </div>
   </div>
+
   <script src="/js/main.js"></script>
   <script src="/js/theme.js"></script>
 </body>

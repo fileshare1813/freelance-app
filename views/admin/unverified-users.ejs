@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Row urgency colors */
+    .row-critical td { background: #fef2f2 !important; }
+    .row-warned   td { background: #fffbeb !important; }
+    .row-safe     td { background: #f0fdf4 !important; }
+
+    /* Hour badges */
+    .hbadge {
+      display: inline-block; padding: 2px 10px;
+      border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    }
+    .hb-red    { background: #fee2e2; color: #dc2626; }
+    .hb-orange { background: #fef3c7; color: #d97706; }
+    .hb-green  { background: #dcfce7; color: #16a34a; }
+    .hb-gray   { background: #f1f5f9; color: #64748b; }
+
+    /* Cron trigger box */
+    .cron-box {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 18px 22px;
+      margin-bottom: 20px;
+      display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .cron-box h4 { font-size: .95rem; font-weight: 700; margin-bottom: 3px; }
+    .cron-box p  { font-size: .82rem; color: var(--text-muted); margin: 0; }
+
+    /* Legend */
+    .legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 14px; font-size: .8rem; color: var(--text-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%; display: inline-block;
+      margin-right: 5px; vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="app-body">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/flash') %>
+  <div class="app-layout">
+    <%- include('../partials/sidebar') %>
+    <main class="main-content">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Unverified Users</h1>
+          <p class="page-subtitle">Email verify na karne wale — warning &amp; auto-ban tracker</p>
+        </div>
+        <a href="/admin/users" class="btn btn-outline">
+          <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+      </div>
+
+      <!-- Cron trigger -->
+      <div class="cron-box">
+        <div>
+          <h4>
+            <i class="fas fa-clock" style="color:var(--primary);margin-right:6px;"></i>
+            Verification Cron Job
+          </h4>
+          <p>Roz midnight IST ko auto-chalega. Testing ke liye manually bhi trigger kar sakte hain.</p>
+        </div>
+        <form action="/admin/run-verification-cron" method="POST">
+          <button type="submit" class="btn btn-warning"
+            onclick="return confirm('Cron abhi run karein?\nWarning emails bhejenge aur eligible users ban honge!')">
+            <i class="fas fa-play"></i> Abhi Run Karein
+          </button>
+        </form>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#ef4444;"></span>Ban hone wale hain (&lt;6 hrs)</span>
+        <span><span class="legend-dot" style="background:#f59e0b;"></span>Warning diya ja chuka hai</span>
+        <span><span class="legend-dot" style="background:#22c55e;"></span>Naye hain (24hrs ke andar)</span>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="stats-grid" style="margin-bottom:20px;">
+        <div class="stat-card stat-orange">
+          <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= users.length %></div>
+            <div class="stat-label">Total Unverified</div>
+          </div>
+        </div>
+        <div class="stat-card stat-blue">
+          <div class="stat-icon"><i class="fas fa-envelope-open-text"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= users.filter(u => u.warningSentAt).length %></div>
+            <div class="stat-label">Warning Bheji Gayi</div>
+          </div>
+        </div>
+        <div class="stat-card" style="border-top:4px solid #ef4444;">
+          <div class="stat-icon" style="color:#ef4444;"><i class="fas fa-ban"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">
+              <%= users.filter(u => u.warningSentAt && u.banInHrs !== null && u.banInHrs <= 6).length %>
+            </div>
+            <div class="stat-label">6 Hrs Me Ban Honge</div>
+          </div>
+        </div>
+        <div class="stat-card stat-green">
+          <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+          <div class="stat-info">
+            <div class="stat-value"><%= users.filter(u => u.ageHrs < 24).length %></div>
+            <div class="stat-label">Naye (&lt;24hrs)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Unverified Users (<%= users.length %>)</h3>
+        </div>
+
+        <% if (users.length === 0) { %>
+          <div class="empty-state-box" style="border:none;padding:48px;">
+            <i class="fas fa-check-circle fa-3x" style="color:var(--success);"></i>
+            <h3 style="color:var(--success);margin-top:12px;">Sab clear hai!</h3>
+            <p>Koi unverified user nahi hai.</p>
+          </div>
+        <% } else { %>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Registered</th>
+                <th>Account Age</th>
+                <th>Warning Status</th>
+                <th>Ban In</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% users.forEach(u => {
+                let rowClass = '';
+                if (u.warningSentAt && u.banInHrs !== null && u.banInHrs <= 6) rowClass = 'row-critical';
+                else if (u.warningSentAt)  rowClass = 'row-warned';
+                else if (u.ageHrs < 24)    rowClass = 'row-safe';
+              %>
+              <tr class="<%= rowClass %>">
+                <td>
+                  <div class="user-cell">
+                    <img src="<%= u.googleAvatar || '/avatar/' + u._id %>"
+                         class="table-avatar"
+                         onerror="this.src='/images/default-avatar.png'">
+                    <div>
+                      <div class="fw-bold"><%= u.name %></div>
+                      <div class="text-muted small"><%= u.email %></div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge role-<%= u.role %>"><%= u.role %></span></td>
+                <td class="text-muted small">
+                  <%= new Date(u.createdAt).toLocaleString('en-IN', {
+                    day:'2-digit', month:'short', year:'numeric',
+                    hour:'2-digit', minute:'2-digit'
+                  }) %>
+                </td>
+                <td>
+                  <span class="hbadge <%= u.ageHrs >= 48 ? 'hb-red' : u.ageHrs >= 24 ? 'hb-orange' : 'hb-green' %>">
+                    <%= u.ageHrs %> hrs ago
+                  </span>
+                </td>
+                <td>
+                  <% if (u.warningSentAt) { %>
+                    <span class="badge badge-warning">
+                      <i class="fas fa-exclamation-triangle"></i> Warning Bheji
+                    </span>
+                    <div class="text-muted small" style="margin-top:3px;">
+                      <%= new Date(u.warningSentAt).toLocaleString('en-IN', {
+                        day:'2-digit', month:'short',
+                        hour:'2-digit', minute:'2-digit'
+                      }) %>
+                    </div>
+                  <% } else { %>
+                    <span class="badge badge-success">
+                      <i class="fas fa-clock"></i> Pending
+                    </span>
+                    <div class="text-muted small" style="margin-top:3px;">
+                      Midnight ko warning jayegi
+                    </div>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (u.warningSentAt && u.banInHrs !== null) { %>
+                    <% if (u.banInHrs <= 0) { %>
+                      <span class="hbadge hb-red">Ban Due!</span>
+                    <% } else { %>
+                      <span class="hbadge <%= u.banInHrs <= 6 ? 'hb-red' : u.banInHrs <= 12 ? 'hb-orange' : 'hb-gray' %>">
+                        ~<%= u.banInHrs %> hrs
+                      </span>
+                    <% } %>
+                  <% } else { %>
+                    <span class="text-muted small">—</span>
+                  <% } %>
+                </td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/theme.js"></script>
+  <script>const USER_ID = '<%= currentUser._id %>';</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Expired - FreelanceHub</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/auth.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .exp-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 42px 34px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+      text-align: center;
+    }
+    .exp-icon {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 1.8rem; color: #fff;
+    }
+    .exp-card h2 {
+      font-size: 1.4rem; font-weight: 800;
+      color: #1a1a2e; margin-bottom: 8px;
+    }
+    .exp-card p {
+      color: #64748b; font-size: 0.88rem;
+      line-height: 1.7; margin-bottom: 20px;
+    }
+    .steps-box {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 12px; padding: 16px 18px;
+      text-align: left; margin-bottom: 20px;
+    }
+    .steps-box h4 {
+      font-size: 0.84rem; font-weight: 700;
+      color: #374151; margin-bottom: 10px;
+    }
+    .step-row {
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-bottom: 8px; font-size: 0.84rem; color: #64748b;
+    }
+    .step-num {
+      width: 22px; height: 22px;
+      background: #6c63ff; color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+    }
+    .ban-warn {
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 10px; padding: 12px 15px;
+      margin-bottom: 20px;
+    }
+    .ban-warn p { color: #991b1b; font-size: 0.82rem; margin: 0; }
+  </style>
+</head>
+<body class="auth-body">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;">
+    <div class="exp-card">
+
+      <div class="exp-icon"><i class="fas fa-link-slash"></i></div>
+      <h2>Link Expire Ho Gaya!</h2>
+      <p>
+        Aapka verification link <strong>expire</strong> ho gaya hai ya <strong>invalid</strong> hai.<br>
+        Neeche diye steps follow karein.
+      </p>
+
+      <!-- Ban warning -->
+      <div class="ban-warn">
+        <p>
+          <strong>⚠️ Warning:</strong> Agar abhi bhi verify nahi kiya, account
+          <strong>ban ho sakta hai</strong>. Jaldi karein!
+        </p>
+      </div>
+
+      <!-- Steps -->
+      <div class="steps-box">
+        <h4><i class="fas fa-info-circle" style="color:#6c63ff;margin-right:5px;"></i> Aage kya karein?</h4>
+        <div class="step-row">
+          <span class="step-num">1</span>
+          <span>Email inbox check karein — aur ek warning email aa sakti hai</span>
+        </div>
+        <div class="step-row">
+          <span class="step-num">2</span>
+          <span>Agar account ban nahi hua, support se contact karein</span>
+        </div>
+        <div class="step-row" style="margin-bottom:0;">
+          <span class="step-num" style="background:#22c55e;">3</span>
+          <span>Ya fresh register karein agar account available hai</span>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a href="/auth/register" class="btn btn-primary btn-full">
+          <i class="fas fa-user-plus"></i> Naya Account Banayein
+        </a>
+        <a href="mailto:support@freelancehub.com" class="btn btn-outline btn-full">
+          <i class="fas fa-envelope"></i> Support Se Contact Karein
+        </a>
+        <a href="/auth/login"
+           style="font-size:0.83rem;color:#94a3b8;text-align:center;margin-top:6px;">
+          ← Login Page
+        </a>
+      </div>
+
+    </div>
+  </div>
+  <script src="/js/theme.js"></script>
+</body>
+</html>

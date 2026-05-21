@@ -1,7 +1,7 @@
 <% if (currentUser) { %>
 <aside class="sidebar">
   <div class="sidebar-user">
-    <img src="<%= currentUser.googleAvatar || '/avatar/' + currentUser._id %>" 
+    <img src="<%= currentUser.googleAvatar || '/avatar/' + currentUser._id %>"
          alt="<%= currentUser.name %>" class="sidebar-avatar"
          onerror="this.src='/images/default-avatar.png'">
     <div>
@@ -11,29 +11,42 @@
   </div>
   <nav class="sidebar-nav">
     <% if (currentUser.role === 'admin') { %>
-      <a href="/admin/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-      <a href="/admin/users" class="sidebar-link"><i class="fas fa-users"></i><span>Manage Users</span></a>
-      <a href="/admin/projects" class="sidebar-link"><i class="fas fa-briefcase"></i><span>All Projects</span></a>
-      <a href="/messages" class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
-      <a href="/admin/payments" class="sidebar-link"><i class="fas fa-money-bill-wave"></i><span>Payments</span></a>
-      <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
+      <a href="/admin/dashboard"        class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <a href="/admin/users"            class="sidebar-link"><i class="fas fa-users"></i><span>Manage Users</span></a>
+
+      <%/* NEW: Unverified users link with red badge */%>
+      <a href="/admin/unverified-users" class="sidebar-link" style="position:relative;">
+        <i class="fas fa-user-clock"></i>
+        <span>Unverified Users</span>
+        <% if (typeof unverifiedCount !== 'undefined' && unverifiedCount > 0) { %>
+          <span style="margin-left:auto;background:#ef4444;color:#fff;border-radius:20px;
+                       padding:1px 8px;font-size:0.7rem;font-weight:700;flex-shrink:0;">
+            <%= unverifiedCount %>
+          </span>
+        <% } %>
+      </a>
+
+      <a href="/admin/projects"  class="sidebar-link"><i class="fas fa-briefcase"></i><span>All Projects</span></a>
+      <a href="/messages"        class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
+      <a href="/admin/payments"  class="sidebar-link"><i class="fas fa-money-bill-wave"></i><span>Payments</span></a>
+      <a href="/notifications"   class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
     <% } else if (currentUser.role === 'client') { %>
-      <a href="/client/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
-      <a href="/client/post-project" class="sidebar-link"><i class="fas fa-plus-circle"></i><span>Post Project</span></a>
-      <a href="/client/my-projects" class="sidebar-link"><i class="fas fa-folder-open"></i><span>My Projects</span></a>
+      <a href="/client/dashboard"       class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <a href="/client/post-project"    class="sidebar-link"><i class="fas fa-plus-circle"></i><span>Post Project</span></a>
+      <a href="/client/my-projects"     class="sidebar-link"><i class="fas fa-folder-open"></i><span>My Projects</span></a>
       <a href="/client/find-freelancer" class="sidebar-link"><i class="fas fa-search"></i><span>Find Freelancer</span></a>
-      <a href="/messages" class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
-      <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
-      <a href="/profile" class="sidebar-link"><i class="fas fa-user"></i><span>My Profile</span></a>
+      <a href="/messages"               class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
+      <a href="/notifications"          class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
+      <a href="/profile"                class="sidebar-link"><i class="fas fa-user"></i><span>My Profile</span></a>
     <% } else if (currentUser.role === 'freelancer') { %>
-      <a href="/freelancer/dashboard" class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <a href="/freelancer/dashboard"       class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
       <a href="/freelancer/browse-projects" class="sidebar-link"><i class="fas fa-search"></i><span>Browse Projects</span></a>
-      <a href="/freelancer/my-proposals" class="sidebar-link"><i class="fas fa-paper-plane"></i><span>My Proposals</span></a>
-      <a href="/freelancer/submit-report" class="sidebar-link"><i class="fas fa-file-alt"></i><span>Daily Report</span></a>
-      <a href="/messages" class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
-      <a href="/notifications" class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
-      <a href="/payments/freelancer" class="sidebar-link"><i class="fas fa-wallet"></i><span>My Payments</span></a>
-      <a href="/freelancer/edit-profile" class="sidebar-link"><i class="fas fa-edit"></i><span>Edit Profile</span></a>
+      <a href="/freelancer/my-proposals"    class="sidebar-link"><i class="fas fa-paper-plane"></i><span>My Proposals</span></a>
+      <a href="/freelancer/submit-report"   class="sidebar-link"><i class="fas fa-file-alt"></i><span>Daily Report</span></a>
+      <a href="/messages"                   class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
+      <a href="/notifications"              class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
+      <a href="/payments/freelancer"        class="sidebar-link"><i class="fas fa-wallet"></i><span>My Payments</span></a>
+      <a href="/freelancer/edit-profile"    class="sidebar-link"><i class="fas fa-edit"></i><span>Edit Profile</span></a>
     <% } %>
   </nav>
   <div class="sidebar-footer">
