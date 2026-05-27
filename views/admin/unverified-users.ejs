@@ -5,46 +5,132 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/dashboard.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/theme.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    /* Row urgency colors */
-    .row-critical td { background: #fef2f2 !important; }
-    .row-warned   td { background: #fffbeb !important; }
-    .row-safe     td { background: #f0fdf4 !important; }
-
-    /* Hour badges */
-    .hbadge {
-      display: inline-block; padding: 2px 10px;
-      border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    /* ── Cron box — theme variables use karo ── */
+    .cron-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
     }
+    .cron-box h4 {
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: 3px;
+      color: var(--text-primary);
+    }
+    .cron-box p {
+      font-size: .82rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+      font-size: .8rem;
+      color: var(--text-secondary);
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    /* ── Table row urgency — dark mode aware ── */
+    .row-critical td {
+      background: rgba(239, 68, 68, 0.08) !important;
+    }
+    .row-warned td {
+      background: rgba(245, 158, 11, 0.08) !important;
+    }
+    .row-safe td {
+      background: rgba(34, 197, 94, 0.08) !important;
+    }
+
+    /* ── Hour badges — dark mode aware ── */
+    .hbadge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    /* Light mode */
     .hb-red    { background: #fee2e2; color: #dc2626; }
     .hb-orange { background: #fef3c7; color: #d97706; }
     .hb-green  { background: #dcfce7; color: #16a34a; }
     .hb-gray   { background: #f1f5f9; color: #64748b; }
 
-    /* Cron trigger box */
-    .cron-box {
-      background: #fff; border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 18px 22px;
-      margin-bottom: 20px;
-      display: flex; align-items: center;
-      justify-content: space-between; flex-wrap: wrap; gap: 12px;
-    }
-    .cron-box h4 { font-size: .95rem; font-weight: 700; margin-bottom: 3px; }
-    .cron-box p  { font-size: .82rem; color: var(--text-muted); margin: 0; }
+    /* Dark mode overrides */
+    [data-theme="dark"] .hb-red    { background: #7f1d1d; color: #fca5a5; }
+    [data-theme="dark"] .hb-orange { background: #78350f; color: #fcd34d; }
+    [data-theme="dark"] .hb-green  { background: #14532d; color: #86efac; }
+    [data-theme="dark"] .hb-gray   { background: #252540; color: #94a3b8; }
 
-    /* Legend */
-    .legend {
-      display: flex; gap: 16px; flex-wrap: wrap;
-      margin-bottom: 14px; font-size: .8rem; color: var(--text-secondary);
+    /* ── Warning badge dark mode ── */
+    [data-theme="dark"] .badge-warning {
+      background: #78350f !important;
+      color: #fcd34d !important;
     }
-    .legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%; display: inline-block;
-      margin-right: 5px; vertical-align: middle;
+    [data-theme="dark"] .badge-success {
+      background: #14532d !important;
+      color: #86efac !important;
     }
+
+    /* ── Empty state ── */
+    .empty-clear {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+    .empty-clear i {
+      font-size: 3rem;
+      color: var(--success);
+      display: block;
+      margin-bottom: 12px;
+    }
+    .empty-clear h3 {
+      color: var(--success);
+      margin-bottom: 6px;
+    }
+
+    /* ── Stat card — 4th one (no color var) ── */
+    .stat-card-neutral {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card-neutral::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: #ef4444;
+    }
+    .stat-card-neutral .stat-icon { color: #ef4444; font-size: 1.5rem; }
+    .stat-card-neutral .stat-value { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); }
+    .stat-card-neutral .stat-label { font-size: 0.85rem; color: var(--text-muted); }
   </style>
 </head>
 <body class="app-body">
@@ -57,7 +143,7 @@
       <div class="page-header">
         <div>
           <h1 class="page-title">Unverified Users</h1>
-          <p class="page-subtitle">Email verify na karne wale — warning &amp; auto-ban tracker</p>
+          <p class="page-subtitle">Warning &amp; auto-ban tracker</p>
         </div>
         <a href="/admin/users" class="btn btn-outline">
           <i class="fas fa-arrow-left"></i> Back to Users
@@ -71,24 +157,24 @@
             <i class="fas fa-clock" style="color:var(--primary);margin-right:6px;"></i>
             Verification Cron Job
           </h4>
-          <p>Roz midnight IST ko auto-chalega. Testing ke liye manually bhi trigger kar sakte hain.</p>
+          <p>It will run automatically every day at midnight (Eastern Time). You can also trigger it manually for testing purposes.</p>
         </div>
         <form action="/admin/run-verification-cron" method="POST">
           <button type="submit" class="btn btn-warning"
             onclick="return confirm('Cron abhi run karein?\nWarning emails bhejenge aur eligible users ban honge!')">
-            <i class="fas fa-play"></i> Abhi Run Karein
+            <i class="fas fa-play"></i> Run Now
           </button>
         </form>
       </div>
 
       <!-- Legend -->
       <div class="legend">
-        <span><span class="legend-dot" style="background:#ef4444;"></span>Ban hone wale hain (&lt;6 hrs)</span>
-        <span><span class="legend-dot" style="background:#f59e0b;"></span>Warning diya ja chuka hai</span>
-        <span><span class="legend-dot" style="background:#22c55e;"></span>Naye hain (24hrs ke andar)</span>
+        <span><span class="legend-dot" style="background:#ef4444;"></span>It is about to be banned. (&lt;6 hrs)</span>
+        <span><span class="legend-dot" style="background:#f59e0b;"></span>Warning Sent</span>
+        <span><span class="legend-dot" style="background:#22c55e;"></span>New in 24hrs</span>
       </div>
 
-      <!-- Summary Stats -->
+      <!-- Stats -->
       <div class="stats-grid" style="margin-bottom:20px;">
         <div class="stat-card stat-orange">
           <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
@@ -101,23 +187,21 @@
           <div class="stat-icon"><i class="fas fa-envelope-open-text"></i></div>
           <div class="stat-info">
             <div class="stat-value"><%= users.filter(u => u.warningSentAt).length %></div>
-            <div class="stat-label">Warning Bheji Gayi</div>
+            <div class="stat-label">Warning Sent</div>
           </div>
         </div>
-        <div class="stat-card" style="border-top:4px solid #ef4444;">
-          <div class="stat-icon" style="color:#ef4444;"><i class="fas fa-ban"></i></div>
-          <div class="stat-info">
-            <div class="stat-value">
-              <%= users.filter(u => u.warningSentAt && u.banInHrs !== null && u.banInHrs <= 6).length %>
-            </div>
-            <div class="stat-label">6 Hrs Me Ban Honge</div>
+        <div class="stat-card-neutral">
+          <div class="stat-icon"><i class="fas fa-ban"></i></div>
+          <div class="stat-value">
+            <%= users.filter(u => u.warningSentAt && u.banInHrs !== null && u.banInHrs <= 6).length %>
           </div>
+          <div class="stat-label">Ban in 6hrs</div>
         </div>
         <div class="stat-card stat-green">
           <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
           <div class="stat-info">
             <div class="stat-value"><%= users.filter(u => u.ageHrs < 24).length %></div>
-            <div class="stat-label">Naye (&lt;24hrs)</div>
+            <div class="stat-label">New (&lt;24hrs)</div>
           </div>
         </div>
       </div>
@@ -129,10 +213,10 @@
         </div>
 
         <% if (users.length === 0) { %>
-          <div class="empty-state-box" style="border:none;padding:48px;">
-            <i class="fas fa-check-circle fa-3x" style="color:var(--success);"></i>
-            <h3 style="color:var(--success);margin-top:12px;">Sab clear hai!</h3>
-            <p>Koi unverified user nahi hai.</p>
+          <div class="empty-clear">
+            <i class="fas fa-check-circle"></i>
+            <h3>All clear!</h3>
+            <p>No unverified user.</p>
           </div>
         <% } else { %>
         <div style="overflow-x:auto;">
@@ -181,7 +265,7 @@
                 <td>
                   <% if (u.warningSentAt) { %>
                     <span class="badge badge-warning">
-                      <i class="fas fa-exclamation-triangle"></i> Warning Bheji
+                      <i class="fas fa-exclamation-triangle"></i> Warning Sent
                     </span>
                     <div class="text-muted small" style="margin-top:3px;">
                       <%= new Date(u.warningSentAt).toLocaleString('en-IN', {
@@ -194,7 +278,7 @@
                       <i class="fas fa-clock"></i> Pending
                     </span>
                     <div class="text-muted small" style="margin-top:3px;">
-                      Midnight ko warning jayegi
+                      A warning will be issued at midnight.
                     </div>
                   <% } %>
                 </td>
