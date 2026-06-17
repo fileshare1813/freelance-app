@@ -143,19 +143,23 @@ exports.postLogin = (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
     if (err) return next(err);
 
-    // Wrong credentials
     if (!user) {
       req.flash('error', info?.message || 'Invalid credentials');
       return res.redirect('/auth/login');
     }
 
-    // Banned
     if (user.isBanned) {
       req.flash('error', 'Account banned. Contact support@freelancehub.com');
       return res.redirect('/auth/login');
     }
 
-    // Unverified — naya OTP bhejo
+    // Block admin from logging in via main login page
+    if (user.role === 'admin') {
+      req.flash('error', 'Admins must use the Admin Login page.');
+      return res.redirect('/auth/admin/login');
+    }
+
+    // Unverified — send OTP
     if (!user.isVerified) {
       try {
         const otp       = generateOTP();
@@ -167,7 +171,6 @@ exports.postLogin = (req, res, next) => {
         req.session.pendingEmail      = user.email;
         req.session.showUnverifiedMsg = true;
 
-        // Session explicitly save karo, tab redirect
         await new Promise((resolve, reject) =>
           req.session.save(e => (e ? reject(e) : resolve()))
         );
@@ -180,7 +183,6 @@ exports.postLogin = (req, res, next) => {
       }
     }
 
-    // Verified user — normal login
     req.logIn(user, async (loginErr) => {
       if (loginErr) return next(loginErr);
       try {
@@ -190,7 +192,6 @@ exports.postLogin = (req, res, next) => {
         console.error('[postLogin lastLogin]', e);
       }
       req.flash('success', `Welcome back, ${user.name}!`);
-      if (user.role === 'admin')      return res.redirect('/admin/dashboard');
       if (user.role === 'client')     return res.redirect('/client/dashboard');
       return res.redirect('/freelancer/dashboard');
     });
@@ -349,4 +350,157 @@ exports.resendVerifyOTP = async (req, res) => {
     console.error('[resendVerifyOTP]', err);
     return res.json({ success: false, message: 'OTP bhejne mein error aaya.' });
   }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN AUTH
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── getAdminLogin ─────────────────────────────────────────────────────────────
+exports.getAdminLogin = (req, res) => {
+  // Already logged in as admin → redirect to dashboard
+  if (req.isAuthenticated() && req.user.role === 'admin') {
+    return res.redirect('/admin/dashboard');
+  }
+  return res.render('admin/login', {
+    title:               'Admin Login - FreelanceHub',
+    currentUser:         null,
+    success:             req.flash('success'),
+    error:               req.flash('error'),
+    unreadNotifications: 0,
+    unverifiedCount:     0
+  });
+};
+
+// ── postAdminLogin ────────────────────────────────────────────────────────────
+exports.postAdminLogin = (req, res, next) => {
+  passport.authenticate('local', async (err, user, info) => {
+    if (err) return next(err);
+
+    if (!user) {
+      req.flash('error', info?.message || 'Invalid credentials');
+      return res.redirect('/auth/admin/login');
+    }
+
+    // Must be admin role
+    if (user.role !== 'admin') {
+      req.flash('error', 'Access denied. Admin credentials required.');
+      return res.redirect('/auth/admin/login');
+    }
+
+    if (user.isBanned) {
+      req.flash('error', 'This admin account has been disabled.');
+      return res.redirect('/auth/admin/login');
+    }
+
+    req.logIn(user, async (loginErr) => {
+      if (loginErr) return next(loginErr);
+      try {
+        user.lastLogin = new Date();
+        await user.save();
+      } catch (e) {
+        console.error('[postAdminLogin lastLogin]', e);
+      }
+      req.flash('success', `Welcome back, ${user.name}! 👋`);
+      return res.redirect('/admin/dashboard');
+    });
+
+  })(req, res, next);
+};
+
+// ── getAdminRegister ──────────────────────────────────────────────────────────
+exports.getAdminRegister = (req, res) => {
+  // Already logged in as admin → redirect
+  if (req.isAuthenticated() && req.user.role === 'admin') {
+    return res.redirect('/admin/dashboard');
+  }
+  return res.render('admin/register', {
+    title:               'Create Admin - FreelanceHub',
+    currentUser:         null,
+    success:             req.flash('success'),
+    error:               req.flash('error'),
+    unreadNotifications: 0,
+    unverifiedCount:     0
+  });
+};
+
+// ── postAdminRegister ─────────────────────────────────────────────────────────
+exports.postAdminRegister = async (req, res) => {
+  try {
+    const { name, email, password, confirmPassword, secretKey } = req.body;
+
+    // 1. Validate secret key from .env
+    const validSecret = process.env.ADMIN_SECRET_KEY;
+    if (!validSecret) {
+      req.flash('error', 'ADMIN_SECRET_KEY is not set in .env. Contact server administrator.');
+      return res.redirect('/auth/admin/register');
+    }
+    if (secretKey !== validSecret) {
+      req.flash('error', 'Invalid Admin Secret Key. Access denied.');
+      return res.redirect('/auth/admin/register');
+    }
+
+    // 2. Validate passwords match
+    if (password !== confirmPassword) {
+      req.flash('error', 'Passwords do not match.');
+      return res.redirect('/auth/admin/register');
+    }
+
+    if (password.length < 8) {
+      req.flash('error', 'Password must be at least 8 characters.');
+      return res.redirect('/auth/admin/register');
+    }
+
+    // 3. Check if email already exists
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      if (existing.role === 'admin') {
+        req.flash('error', 'An admin with this email already exists.');
+      } else {
+        // Promote existing user to admin
+        existing.role       = 'admin';
+        existing.isVerified = true;
+        existing.isBanned   = false;
+        existing.password   = await bcrypt.hash(password, 12);
+        existing.name       = name;
+        await existing.save();
+        req.flash('success', 'Existing account promoted to Admin! Please login.');
+        return res.redirect('/auth/admin/login');
+      }
+      return res.redirect('/auth/admin/register');
+    }
+
+    // 4. Create new admin user
+    const hashed = await bcrypt.hash(password, 12);
+    await User.create({
+      name,
+      email:      email.toLowerCase(),
+      password:   hashed,
+      role:       'admin',
+      isVerified: true,
+      isActive:   true,
+      isBanned:   false
+    });
+
+    req.flash('success', 'Admin account created successfully! Please login.');
+    return res.redirect('/auth/admin/login');
+
+  } catch (err) {
+    console.error('[postAdminRegister]', err);
+    if (err.code === 11000) {
+      req.flash('error', 'Email already registered.');
+    } else {
+      req.flash('error', 'Failed to create admin account. Try again.');
+    }
+    return res.redirect('/auth/admin/register');
+  }
+};
+
+// ── adminLogout ───────────────────────────────────────────────────────────────
+exports.adminLogout = (req, res) => {
+  req.logout((err) => {
+    if (err) console.error('[adminLogout]', err);
+    req.flash('success', 'Logged out from admin panel.');
+    return res.redirect('/auth/admin/login');
+  });
 };

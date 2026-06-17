@@ -13,8 +13,6 @@
     <% if (currentUser.role === 'admin') { %>
       <a href="/admin/dashboard"        class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
       <a href="/admin/users"            class="sidebar-link"><i class="fas fa-users"></i><span>Manage Users</span></a>
-
-      <%/* NEW: Unverified users link with red badge */%>
       <a href="/admin/unverified-users" class="sidebar-link" style="position:relative;">
         <i class="fas fa-user-clock"></i>
         <span>Unverified Users</span>
@@ -25,11 +23,11 @@
           </span>
         <% } %>
       </a>
-
       <a href="/admin/projects"  class="sidebar-link"><i class="fas fa-briefcase"></i><span>All Projects</span></a>
       <a href="/messages"        class="sidebar-link"><i class="fas fa-comments"></i><span>Messages</span></a>
       <a href="/admin/payments"  class="sidebar-link"><i class="fas fa-money-bill-wave"></i><span>Payments</span></a>
       <a href="/notifications"   class="sidebar-link"><i class="fas fa-bell"></i><span>Notifications</span></a>
+      <a href="/admin/settings"  class="sidebar-link"><i class="fas fa-cog"></i><span>Settings</span></a>
     <% } else if (currentUser.role === 'client') { %>
       <a href="/client/dashboard"       class="sidebar-link"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
       <a href="/client/post-project"    class="sidebar-link"><i class="fas fa-plus-circle"></i><span>Post Project</span></a>
@@ -50,7 +48,11 @@
     <% } %>
   </nav>
   <div class="sidebar-footer">
-    <a href="/auth/logout" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    <% if (currentUser.role === 'admin') { %>
+      <a href="/auth/admin/logout" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    <% } else { %>
+      <a href="/auth/logout" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    <% } %>
   </div>
 </aside>
 <% } %>
